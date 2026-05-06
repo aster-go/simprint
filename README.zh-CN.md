@@ -1,0 +1,32 @@
+<div align="center">
+  <img src="./public/assets/logo.png" alt="Simprint Logo" width="120" />
+  <h1>Simprint</h1>
+  <p>面向浏览器环境、代理资源与自动化工作流的桌面工作台。</p>
+  <p>
+    <img alt="License AGPLv3" src="https://img.shields.io/badge/license-AGPLv3-67e8f9?style=flat-square&labelColor=0f172a" />
+    <img alt="Desktop Tauri 2" src="https://img.shields.io/badge/desktop-Tauri%202-f59e0b?style=flat-square&labelColor=0f172a" />
+    <img alt="UI React 19" src="https://img.shields.io/badge/ui-React%2019-60a5fa?style=flat-square&labelColor=0f172a" />
+    <img alt="Runtime Rust 2024" src="https://img.shields.io/badge/runtime-Rust%202024-f97316?style=flat-square&labelColor=0f172a" />
+  </p>
+  <p>
+    <a href="./README.md">English</a> | <strong>简体中文</strong>
+  </p>
+</div>
+
+---
+
+## Introduction
+
+Simprint 是一个面向浏览器业务场景的桌面工作台，用于在同一入口中集中组织本地环境、代理资源与自动化流程。
+
+它适合需要长期维护多套浏览器工作环境的个人与团队，例如跨境业务、账号运营、自动化任务执行以及资源协同管理等场景。通过统一的桌面入口，Simprint 可以更稳定地管理环境生命周期、连接外部资源，并围绕日常操作建立可复用的工作流。
+
+## Contributing
+
+欢迎提交 Issue 和 Pull Request。
+
+## License
+
+本项目采用 GNU Affero General Public License v3.0 (AGPLv3) 进行许可。
+
+如果你希望在不履行 AGPLv3 义务的前提下使用 Simprint，包括分发修改版本或以闭源服务形式提供修改版本，请联系获取商业许可。
