@@ -25,17 +25,29 @@ Simprint is a desktop workspace for browser-driven operations, designed to organ
 
 It is intended for individuals and teams that need to maintain multiple browser work environments over time, including scenarios such as cross-border operations, account management, automated task execution, and shared resource coordination. With a unified desktop entry point, Simprint helps manage environment lifecycles more consistently, connect external resources, and build reusable workflows around daily operations.
 
+## Why Simprint?
+
+Most browser automation and browser workspace products are still shaped by a few recurring limitations:
+
+- Closed-source products that hide implementation details and reduce long-term trust.
+- Cloud-only products that force operational workflows and sensitive data into third-party infrastructure.
+- Anti-user product decisions that restrict ownership, portability, and control over browser environments.
+- Rigid systems that are difficult to extend, automate, or integrate into custom workflows.
+
+Simprint is being built to take a different direction: an open, programmable browser workspace for developers, researchers, operators, and automation-heavy teams. The goal is to make browser environments easier to control locally, easier to integrate with surrounding tools, and easier to evolve as workflows become more technical and more AI-assisted.
+
 ## Features
 
-- **Profiles**: Organize multiple browser environments, account groupings, and workspace states from one desktop entry point.
-- **Proxy**: Connect and manage proxy resources used by different environments and operational flows.
-- **Automation**: Build and run repeatable browser workflows for daily operations and task execution.
+- **Isolated browser environments**: Run multiple browser workspaces with separated state and operational boundaries.
+- **Persistent browser profiles**: Keep long-lived browser profiles, account context, and workspace state organized over time.
+- **Proxy orchestration**: Connect, assign, and manage proxy resources across environments and workflow scenarios.
+- **Fingerprint configuration**: Control environment-level browser characteristics and continue refining fingerprint-related behavior.
+- **Local automation runtime**: Build and run repeatable browser workflows for daily operations and task execution.
+- **Chromium-based desktop runtime**: Run the workspace through a local Chromium-oriented Tauri + Rust desktop runtime with integrated frontend and system-level services.
 - **Syncer**: Coordinate multiple running environments, choose a master session, and mirror interaction flows across selected windows.
-- **Fingerprint**: Manage environment-level browser characteristics and continue refining fingerprint-related capabilities over time.
 - **RPC bridge**: Use the built-in Tauri command bridge between the React frontend and Rust services for desktop-native operations and orchestration.
 - **Local API**: Expose workspace resources such as environments, proxies, tags, groups, and browser kernels through a local runtime API.
 - **MCP**: Run a local Model Context Protocol service so external AI clients can connect to Simprint-managed tools and workspace resources.
-- **Local desktop runtime**: Run the workspace through a local Tauri + Rust desktop runtime with integrated frontend and system-level services.
 
 ## Quick Start
 
