@@ -30,16 +30,19 @@ pub struct FileInfo {
 
 /// HTTP GET 请求
 #[tauri::command]
-pub async fn http_get(url: String) -> Result<JsonRespnse> {
+pub async fn http_get(url: String) -> std::result::Result<JsonRespnse, String> {
     let ctx = AppContext::get();
-    Ok(ctx.main_server_client.get(&url).await?)
+    ctx.main_server_client.get(&url).await.map_err(|e| e.to_string())
 }
 
 /// HTTP POST 请求
 #[tauri::command]
-pub async fn http_post(url: String, data: Option<Value>) -> Result<JsonRespnse> {
+pub async fn http_post(
+    url: String,
+    data: Option<Value>,
+) -> std::result::Result<JsonRespnse, String> {
     let ctx = AppContext::get();
-    Ok(ctx.main_server_client.post(&url, &data).await?)
+    ctx.main_server_client.post(&url, &data).await.map_err(|e| e.to_string())
 }
 
 /// HTTP POST 表单请求（用于文件上传）
@@ -48,7 +51,7 @@ pub async fn http_post_form(
     url: String,
     files: Option<HashMap<String, Vec<FileInfo>>>,
     fields: Option<HashMap<String, String>>,
-) -> Result<JsonRespnse> {
+) -> std::result::Result<JsonRespnse, String> {
     use reqwest::multipart::{Form, Part};
     use tokio::fs::File;
     use tokio::io::AsyncReadExt;
@@ -59,10 +62,14 @@ pub async fn http_post_form(
     if let Some(files_map) = files {
         for (field_name, file_list) in files_map {
             for file_info in file_list {
-                let mut file = File::open(&file_info.path).await?;
+                let mut file = File::open(&file_info.path)
+                    .await
+                    .map_err(|e| e.to_string())?;
 
                 let mut buffer = Vec::new();
-                file.read_to_end(&mut buffer).await?;
+                file.read_to_end(&mut buffer)
+                    .await
+                    .map_err(|e| e.to_string())?;
 
                 // 确定文件名
                 let file_name = file_info.file_name.clone().unwrap_or_else(|| {
@@ -78,7 +85,7 @@ pub async fn http_post_form(
 
                 // 设置 MIME 类型
                 if let Some(ref mime) = file_info.mime_type {
-                    part = part.mime_str(mime)?;
+                    part = part.mime_str(mime).map_err(|e| e.to_string())?;
                 }
 
                 form = form.part(field_name.clone(), part);
@@ -94,21 +101,27 @@ pub async fn http_post_form(
     }
 
     let ctx = AppContext::get();
-    Ok(ctx.main_server_client.post_form(&url, form).await?)
+    ctx.main_server_client
+        .post_form(&url, form)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 /// HTTP PUT 请求
 #[tauri::command]
-pub async fn http_put(url: String, data: Option<Value>) -> Result<JsonRespnse> {
+pub async fn http_put(url: String, data: Option<Value>) -> std::result::Result<JsonRespnse, String> {
     let ctx = AppContext::get();
-    Ok(ctx.main_server_client.put(&url, &data).await?)
+    ctx.main_server_client.put(&url, &data).await.map_err(|e| e.to_string())
 }
 
 /// HTTP DELETE 请求
 #[tauri::command]
-pub async fn http_delete(url: String, data: Value) -> Result<JsonRespnse> {
+pub async fn http_delete(url: String, data: Value) -> std::result::Result<JsonRespnse, String> {
     let ctx = AppContext::get();
-    Ok(ctx.main_server_client.delete(&url, &data).await?)
+    ctx.main_server_client
+        .delete(&url, &data)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 // ============================================================================

@@ -5,6 +5,7 @@ use crate::domain::environment::{EnvironmentStatus, KernelDetail};
 use crate::infrastructure::updater::planner::calculate_file_hash;
 use std::fs;
 use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 use super::types::{KernelStatusEmitter, SIGNATURE_HASH_SIZE};
 use super::utils::{
@@ -46,7 +47,7 @@ pub async fn download_and_install_kernel(
     let temp_dir = crate::core::paths::PathManager::get_kernel_cache_dir(app)?;
     fs::create_dir_all(&temp_dir)?;
 
-    let zip_name = format!("{}.zip", kernel_value);
+    let zip_name = format!("{}-{}.zip", kernel_value, Uuid::new_v4());
     let zip_path = temp_dir.join(&zip_name);
 
     // 下载文件

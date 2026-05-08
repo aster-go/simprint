@@ -1,13 +1,13 @@
 [server]
 base_url = "https://api.example.com/api/"
 version = "v1"
-secret_key = "replace-with-your-secret-key"
+secret_key = "Nuexz9Y2hRc5Z6HK7Atb"
 
 [updater]
-check_url = "https://update.example.com/api/v1/versions/check"
-latest_json_url = "https://downloads.example.com/latest.json"
-runtime_latest_json_url = "https://downloads.example.com/simprint-runtime/latest.json"
+check_url = "https://update.simprint.app/api/v1/versions/check"
+latest_json_url = "https://pub-39307a5e69c74324855a762027cbf9bf.r2.dev/latest.json"
+runtime_latest_json_url = "https://pub-d9427ecc5980437ba1445fc79ea593bd.r2.dev/simprint-runtime/latest.json"
 updater_temp_dir = "updates"
 
 [webview]
-downlaod_url = "https://downloads.example.com/webview-fixed.zip"
+downlaod_url = "https://pub-39307a5e69c74324855a762027cbf9bf.r2.dev/webview-fixed.zip"

@@ -10,7 +10,7 @@ mod validator;
 pub use types::{AppConfig, ServerConfig, UpdaterConfig};
 
 use crate::core::error::{Error, Result};
-use std::sync::OnceLock;
+use std::{fs, path::PathBuf, sync::OnceLock};
 
 /// 全局配置实例
 static CONFIG: OnceLock<AppConfig> = OnceLock::new();
@@ -19,7 +19,14 @@ static CONFIG: OnceLock<AppConfig> = OnceLock::new();
 ///
 /// 这是最常用的初始化方式，配置在编译时被加密并嵌入到二进制中
 pub fn init() -> Result<()> {
-    let config = loader::load_embedded()?;
+    let config = if let Some(config_name) = local_config_file_name() {
+        let config_path = resolve_local_config_path(config_name);
+        let config_str = fs::read_to_string(&config_path)
+            .map_err(|e| Error::ConfigLoadFailed(format!("{}: {}", config_path.display(), e)))?;
+        loader::load_from_str(&config_str)?
+    } else {
+        loader::load_embedded()?
+    };
     validator::validate(&config)?;
 
     CONFIG.set(config).map_err(|_| Error::ConfigAlreadyInitialized)?;
@@ -67,4 +74,23 @@ pub fn get_or_err() -> Result<&'static AppConfig> {
 /// 仅在确定配置已初始化的场景使用
 pub fn get_or_panic() -> &'static AppConfig {
     CONFIG.get().expect("Config not initialized. Call config::init() first.")
+}
+
+fn local_config_file_name() -> Option<&'static str> {
+    if cfg!(feature = "test") {
+        Some("config.test.toml")
+    } else if cfg!(feature = "development") {
+        Some("config.development.toml")
+    } else {
+        None
+    }
+}
+
+fn resolve_local_config_path(config_name: &str) -> PathBuf {
+    let cwd_path = PathBuf::from(config_name);
+    if cwd_path.exists() {
+        return cwd_path;
+    }
+
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(config_name)
 }

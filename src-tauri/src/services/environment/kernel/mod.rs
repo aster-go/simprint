@@ -9,6 +9,7 @@ use std::fs;
 pub mod downloader;
 pub mod extension;
 mod runtime_bridge;
+mod state;
 pub mod timezone;
 pub mod types;
 pub mod utils;
@@ -33,13 +34,14 @@ impl KernelService {
         kernel_detail: KernelDetail,
         status_emitter: Option<KernelStatusEmitter>,
     ) -> Result<String> {
-        let kernel_value = kernel_value.trim();
+        let kernel_value = kernel_value.trim().to_string();
         if kernel_value.is_empty() {
             return Err("内核版本不能为空".into());
         }
 
+        let _prepare_guard = state::acquire_kernel_prepare_lock(&kernel_value).await;
         let base = utils::resolve_profiles_base(&app, &profiles_path)?;
-        let kernel_dir = base.join(kernel_value);
+        let kernel_dir = base.join(&kernel_value);
         let exe_path = kernel_dir.join(utils::exe_name());
 
         // 目录已存在：校验内核
@@ -54,7 +56,7 @@ impl KernelService {
                 utils::emit_status(
                     status_emitter.as_ref(),
                     &env_uuid,
-                    kernel_value,
+                    &kernel_value,
                     EnvironmentStatus::Error,
                     Some("未找到可执行文件，重新下载"),
                     None,
@@ -73,7 +75,7 @@ impl KernelService {
                 match verifier::verify_kernel(
                     &app,
                     &env_uuid,
-                    kernel_value,
+                    &kernel_value,
                     &kernel_dir,
                     signature,
                     status_emitter.clone(),
@@ -83,7 +85,7 @@ impl KernelService {
                         utils::emit_status(
                             status_emitter.as_ref(),
                             &env_uuid,
-                            kernel_value,
+                            &kernel_value,
                             EnvironmentStatus::Ready,
                             Some("就绪"),
                             None,
@@ -102,7 +104,7 @@ impl KernelService {
                         utils::emit_status(
                             status_emitter.as_ref(),
                             &env_uuid,
-                            kernel_value,
+                            &kernel_value,
                             EnvironmentStatus::Error,
                             Some("校验失败，重新下载"),
                             None,
@@ -121,7 +123,7 @@ impl KernelService {
                         utils::emit_status(
                             status_emitter.as_ref(),
                             &env_uuid,
-                            kernel_value,
+                            &kernel_value,
                             EnvironmentStatus::Error,
                             Some("校验出错，重新下载"),
                             None,
@@ -138,7 +140,7 @@ impl KernelService {
         let exe_path = downloader::download_and_install_kernel(
             &app,
             &env_uuid,
-            kernel_value,
+            &kernel_value,
             &kernel_dir,
             &kernel_detail,
             status_emitter,

@@ -58,19 +58,20 @@ Simprint is being built to take a different direction: an open, programmable bro
 - Rust toolchain
 - Tauri system prerequisites for your platform
 
+### One-line self-hosted server install
+
+Linux servers can bootstrap the self-hosted backend with:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Simprint/simprint/main/deploy/install-server.sh | bash # Update the client config afterwards, for example: base_url = http://127.0.0.1:40041/api/
+```
+
 ### Run locally
 
 ```bash
 pnpm install
+cp src-tauri/config.example.toml src-tauri/config.development.toml
 cargo tauri dev --features development
-```
-
-## Build from source
-
-Build a production package:
-
-```bash
-cargo tauri build --features production
 ```
 
 ## Status
@@ -82,7 +83,7 @@ Some billing-related UI, upgrade prompts, or commercial entry points may still a
 ## Roadmap
 
 - **AI workflows**: Expand AI-assisted operational flows and agent-oriented task orchestration.
-- **Private deployment**: Improve support for self-hosted and enterprise-controlled deployments.
+- **Private deployment**: Completed. Self-hosted and enterprise-controlled deployment support is now available.
 - **Fingerprint research**: Continue refining browser environment controls, compatibility, and research depth.
 - **Automation SDK**: Provide a more reusable interface for building and integrating automation capabilities.
 
