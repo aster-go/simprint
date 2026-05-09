@@ -1,5 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
 const repository = process.env.GH_REPO || process.env.GITHUB_REPOSITORY;
@@ -8,6 +10,7 @@ const installerDir = path.resolve(
   process.env.RELEASE_INSTALLER_DIR || 'src-tauri/target/release/bundle/nsis'
 );
 const latestJsonPath = path.resolve(process.env.RELEASE_LATEST_JSON_PATH || 'latest.json');
+const execFileAsync = promisify(execFile);
 
 if (!token) throw new Error('GH_TOKEN or GITHUB_TOKEN is not set');
 if (!repository) throw new Error('GH_REPO or GITHUB_REPOSITORY is not set');
@@ -17,7 +20,8 @@ const [owner, repo] = repository.split('/');
 if (!owner || !repo) throw new Error(`Invalid repository: ${repository}`);
 
 const installerPath = await findInstaller(installerDir);
-const release = await ensureRelease();
+const tagNotes = await readTagNotes(tag);
+const release = await ensureRelease(tagNotes);
 
 await uploadAsset(release, installerPath, 'application/octet-stream');
 await uploadAsset(release, latestJsonPath, 'application/json');
@@ -33,7 +37,21 @@ async function findInstaller(dir) {
   return path.join(dir, exe.name);
 }
 
-async function ensureRelease() {
+async function readTagNotes(tagName) {
+  try {
+    const { stdout } = await execFileAsync('git', [
+      'for-each-ref',
+      `refs/tags/${tagName}`,
+      '--format=%(contents)',
+    ]);
+    return stdout.trim();
+  } catch (error) {
+    console.warn(`Failed to read git tag notes for ${tagName}: ${error.message}`);
+    return '';
+  }
+}
+
+async function ensureRelease(tagNotes) {
   const existing = await githubApi(
     `/repos/${owner}/${repo}/releases/tags/${encodeURIComponent(tag)}`,
     { okStatuses: [200, 404] }
@@ -41,17 +59,13 @@ async function ensureRelease() {
 
   if (existing.status === 200) {
     console.log(`Using existing GitHub release for ${tag}`);
-    return existing.json;
+    return await syncExistingRelease(existing.json, tagNotes);
   }
 
   console.log(`Creating GitHub release for ${tag}`);
   const created = await githubApi(`/repos/${owner}/${repo}/releases`, {
     method: 'POST',
-    json: {
-      tag_name: tag,
-      name: tag,
-      generate_release_notes: true,
-    },
+    json: buildReleasePayload(tagNotes),
     okStatuses: [201, 422],
   });
 
@@ -61,6 +75,41 @@ async function ensureRelease() {
 
   const refetched = await githubApi(`/repos/${owner}/${repo}/releases/tags/${encodeURIComponent(tag)}`);
   return refetched.json;
+}
+
+async function syncExistingRelease(release, tagNotes) {
+  const desiredBody = tagNotes || '';
+  const currentBody = release.body || '';
+  const shouldUpdateBody = Boolean(tagNotes) && currentBody !== desiredBody;
+  const shouldEnableGeneratedNotes = !tagNotes && !currentBody;
+
+  if (!shouldUpdateBody && !shouldEnableGeneratedNotes) {
+    return release;
+  }
+
+  console.log(`Updating GitHub release metadata for ${tag}`);
+  const updated = await githubApi(`/repos/${owner}/${repo}/releases/${release.id}`, {
+    method: 'PATCH',
+    json: buildReleasePayload(tagNotes),
+    okStatuses: [200],
+  });
+
+  return updated.json;
+}
+
+function buildReleasePayload(tagNotes) {
+  const payload = {
+    tag_name: tag,
+    name: tag,
+  };
+
+  if (tagNotes) {
+    payload.body = tagNotes;
+  } else {
+    payload.generate_release_notes = true;
+  }
+
+  return payload;
 }
 
 async function uploadAsset(release, filePath, contentType) {
