@@ -36,10 +36,7 @@ pub(super) async fn resolve_kernel_launch(
         .ok_or("This environment has no browser kernel configured yet.")?
         .to_string();
 
-    let system = window_info.get("system").and_then(Value::as_str).unwrap_or("Windows");
-    let platform = system_to_platform(system);
-
-    let kernels_map = list_browser_kernels(platform).await?;
+    let kernels_map = list_browser_kernels(host_platform()).await?;
     let kernel_detail = kernels_map
         .get(SIMPRINT_KERNEL_CHROMIUM)
         .and_then(|list| list.iter().find(|kernel| kernel.resource_name == kernel_value))
@@ -104,11 +101,24 @@ async fn list_browser_kernels(
     serde_json::from_value(data).map_err(Into::into)
 }
 
-fn system_to_platform(system: &str) -> &'static str {
-    match system {
-        "Windows" => "windows",
-        "macOS" => "darwin",
-        "Linux" => "linux",
-        _ => "windows",
+fn host_platform() -> &'static str {
+    #[cfg(target_os = "windows")]
+    {
+        "windows"
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        "darwin"
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        "linux"
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        "windows"
     }
 }
