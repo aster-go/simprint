@@ -39,11 +39,14 @@ async function findInstaller(dir) {
 
 async function readTagNotes(tagName) {
   try {
-    const { stdout } = await execFileAsync('git', [
-      'for-each-ref',
-      `refs/tags/${tagName}`,
-      '--format=%(contents)',
-    ]);
+    const ref = `refs/tags/${tagName}`;
+    const { stdout: objectType } = await execFileAsync('git', ['cat-file', '-t', ref]);
+    if (objectType.trim() !== 'tag') {
+      console.log(`Tag ${tagName} is not an annotated tag, fallback to generated release notes`);
+      return '';
+    }
+
+    const { stdout } = await execFileAsync('git', ['for-each-ref', ref, '--format=%(contents)']);
     return stdout.trim();
   } catch (error) {
     console.warn(`Failed to read git tag notes for ${tagName}: ${error.message}`);
