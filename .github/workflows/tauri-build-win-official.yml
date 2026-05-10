@@ -1,4 +1,4 @@
-name: tauri-build-windows
+name: tauri-build-windows-official
 
 on:
   workflow_dispatch:
@@ -7,9 +7,6 @@ on:
         description: "Frontend build mode (development/production/test)"
         required: false
         default: "production"
-  push:
-    tags:
-      - "v*"
 
 jobs:
   build:

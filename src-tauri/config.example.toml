@@ -1,5 +1,5 @@
 [server]
-base_url = "https://api.example.com/api/"
+base_url = "https://api.simprint.app/api/"
 version = "v1"
 secret_key = "Nuexz9Y2hRc5Z6HK7Atb"
 
