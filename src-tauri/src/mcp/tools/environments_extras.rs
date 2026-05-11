@@ -80,6 +80,12 @@ pub struct EnvironmentConfigInput {
     pub project_metadata: Option<Value>,
 }
 
+#[derive(Debug, Clone, Default, Deserialize, Serialize, JsonSchema)]
+pub struct EnvironmentCookieGroupInput {
+    pub site: String,
+    pub cookie_text: String,
+}
+
 #[derive(Debug, Clone, Default, Deserialize, JsonSchema)]
 pub struct CreateEnvironmentInput {
     pub workspace_uuid: String,
@@ -92,7 +98,7 @@ pub struct CreateEnvironmentInput {
     pub tag_uuids: Option<Vec<String>>,
     pub account_uuids: Option<Vec<String>>,
     pub proxy_uuid: Option<String>,
-    pub cookies: Option<Vec<String>>,
+    pub cookies: Option<Vec<EnvironmentCookieGroupInput>>,
     pub config: EnvironmentConfigInput,
 }
 
@@ -166,14 +172,8 @@ pub struct EnvironmentUrlCreateInput {
 #[derive(Debug, Clone, Default, Deserialize, JsonSchema)]
 pub struct EnvironmentCookieCreateInput {
     pub env_uuid: String,
-    pub domain: String,
-    pub name: String,
-    pub value: String,
-    pub path: Option<String>,
-    pub expires_at: Option<String>,
-    pub http_only: Option<bool>,
-    pub secure: Option<bool>,
-    pub same_site: Option<String>,
+    pub site: String,
+    pub cookie_text: String,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, JsonSchema)]
@@ -254,14 +254,8 @@ pub struct ListEnvironmentUrlsOutput {
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct EnvironmentCookieSummary {
-    pub id: i32,
-    pub domain: String,
-    pub name: String,
-    pub path: Option<String>,
-    pub expires_at: Option<String>,
-    pub http_only: Option<bool>,
-    pub secure: Option<bool>,
-    pub same_site: Option<String>,
+    pub site: String,
+    pub cookie_text: String,
 }
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -801,25 +795,19 @@ environment_uuid_tool!(
     "Add a cookie to a Simprint environment.",
     |service, param| {
         let env_uuid = require_env_uuid(&param.env_uuid)?;
-        if param.domain.trim().is_empty() {
-            return Err(McpToolError::invalid_params("domain is required"));
+        if param.site.trim().is_empty() {
+            return Err(McpToolError::invalid_params("site is required"));
         }
-        if param.name.trim().is_empty() {
-            return Err(McpToolError::invalid_params("name is required"));
+        if param.cookie_text.trim().is_empty() {
+            return Err(McpToolError::invalid_params("cookie_text is required"));
         }
 
         let data = service
             .bridge()
             .add_environment_cookie(&serde_json::json!({
                 "environment_uuid": env_uuid.clone(),
-                "domain": param.domain.trim(),
-                "name": param.name.trim(),
-                "value": param.value,
-                "path": normalize_optional(param.path),
-                "expires_at": normalize_optional(param.expires_at),
-                "http_only": param.http_only,
-                "secure": param.secure,
-                "same_site": normalize_optional(param.same_site),
+                "site": param.site.trim(),
+                "cookie_text": param.cookie_text.trim(),
             }))
             .await?;
 
@@ -927,14 +915,8 @@ fn map_environment_url(item: LocalApiEnvironmentUrlItem) -> EnvironmentUrlSummar
 
 fn map_environment_cookie(item: LocalApiEnvironmentCookieItem) -> EnvironmentCookieSummary {
     EnvironmentCookieSummary {
-        id: item.id,
-        domain: item.domain,
-        name: item.name,
-        path: item.path,
-        expires_at: item.expires_at,
-        http_only: item.http_only,
-        secure: item.secure,
-        same_site: item.same_site,
+        site: item.site,
+        cookie_text: item.cookie_text,
     }
 }
 

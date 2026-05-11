@@ -8,8 +8,8 @@ use crate::app::context::AppContext;
 use crate::core::error::Result;
 use crate::domain::environment::EnvironmentStatus;
 use crate::infrastructure::runtime::{
-    AccountConfig, EnvironmentCommandRequest, EnvironmentCommandResponse, EnvironmentStartRequest,
-    FingerprintConfig, WindowBoundsRequest,
+    AccountConfig, CookieGroup, EnvironmentCommandRequest, EnvironmentCommandResponse,
+    EnvironmentStartRequest, FingerprintConfig, WindowBoundsRequest,
 };
 
 use super::extension;
@@ -25,6 +25,7 @@ pub async fn launch_environment(
     exe_path: String,
     env_uuid: String,
     cache_path: String,
+    cookies: Option<Vec<super::types::CookieGroup>>,
     urls: Option<Vec<String>>,
     proxy: Option<ProxyConfig>,
     fingerprint_config: Option<FingerprintConfig>,
@@ -37,6 +38,7 @@ pub async fn launch_environment(
         exe_path,
         env_uuid,
         cache_path,
+        cookies,
         urls,
         proxy,
         fingerprint_config,
@@ -68,6 +70,7 @@ pub async fn batch_launch_environments(
             request.exe_path,
             request.env_uuid,
             request.cache_path,
+            request.cookies,
             request.urls,
             request.proxy,
             request.fingerprint_config,
@@ -238,6 +241,7 @@ async fn prepare_start_request(
     exe_path: String,
     env_uuid: String,
     cache_path: String,
+    cookies: Option<Vec<super::types::CookieGroup>>,
     urls: Option<Vec<String>>,
     proxy: Option<ProxyConfig>,
     mut fingerprint_config: Option<FingerprintConfig>,
@@ -339,6 +343,14 @@ async fn prepare_start_request(
         exe_path,
         env_uuid: env_id,
         user_data_dir: user_data_dir.to_string_lossy().to_string(),
+        cookies: cookies.map(|items| {
+            items.into_iter()
+                .map(|item| CookieGroup {
+                    site: item.site,
+                    cookie_text: item.cookie_text,
+                })
+                .collect()
+        }),
         urls,
         proxy,
         fingerprint_config,

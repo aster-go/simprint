@@ -2,8 +2,9 @@
  * 创建窗口 API 服务
  */
 import { post, isSuccess } from '@/lib/request';
-import type { WindowConfig } from '../types';
+import type { CookieGroup, WindowConfig } from '../types';
 import type {
+  CookieGroupInput,
   CreateEnvironmentRequest,
   CreateEnvironmentResponse,
   CreateEnvironmentOptions,
@@ -56,6 +57,15 @@ function buildEnvironmentUrls(urls: string[]) {
     .filter((item) => item.url.length > 0);
 }
 
+function buildEnvironmentCookies(cookies: CookieGroup[]): CookieGroupInput[] {
+  return cookies
+    .map((item) => ({
+      site: item.site.trim(),
+      cookie_text: item.cookieText.trim(),
+    }))
+    .filter((item) => item.site.length > 0 && item.cookie_text.length > 0);
+}
+
 function buildWindowInfoPayload(config: WindowConfig['windowInfo']) {
   return {
     name: config.name,
@@ -63,7 +73,6 @@ function buildWindowInfoPayload(config: WindowConfig['windowInfo']) {
     kernel: config.kernel,
     userAgent: config.userAgent,
     searchEngine: config.searchEngine,
-    cookies: config.cookies,
     description: config.description,
   };
 }
@@ -144,6 +153,7 @@ function buildTemplateEnvironmentData(
       created_at: now,
       updated_at: now,
     },
+    cookies: buildEnvironmentCookies(config.windowInfo.cookies),
     urls: buildEnvironmentUrls(config.windowInfo.urls).map((item) => ({
       id: 0,
       environment_uuid: environmentUuid,
@@ -242,6 +252,7 @@ export function transformWindowConfigToRequest(
     tag_uuids: options.tagUuids?.length ? options.tagUuids : undefined,
     account_uuids: options.accountUuids?.length ? options.accountUuids : undefined,
     proxy_uuid: options.proxyUuid,
+    cookies: buildEnvironmentCookies(config.windowInfo.cookies),
     urls: buildEnvironmentUrls(config.windowInfo.urls),
     config: {
       window_info: buildWindowInfoPayload(config.windowInfo),

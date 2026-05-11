@@ -5,6 +5,11 @@
 /**
  * 创建环境请求参数（对应后端 CreateEnvironmentRequest）
  */
+export interface CookieGroupInput {
+  site: string;
+  cookie_text: string;
+}
+
 export interface CreateEnvironmentRequest {
   name: string;
   description?: string;
@@ -14,6 +19,7 @@ export interface CreateEnvironmentRequest {
   tag_uuids?: string[];
   account_uuids?: string[];
   proxy_uuid?: string; // 代理 UUID（单个）
+  cookies?: CookieGroupInput[];
   urls?: EnvironmentUrlInput[];
   config: EnvironmentConfigRequest;
 }

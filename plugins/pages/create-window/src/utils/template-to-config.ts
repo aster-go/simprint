@@ -13,6 +13,11 @@ interface TemplateUrlItem {
   url?: string;
 }
 
+interface TemplateCookieItem {
+  site: string;
+  cookie_text: string;
+}
+
 interface TemplateAccountItem {
   uuid: string;
 }
@@ -23,6 +28,7 @@ interface TemplateProxyInfo {
 
 interface TemplateEnvironmentDetailLike {
   config?: Record<string, unknown>;
+  cookies?: TemplateCookieItem[];
   urls?: TemplateUrlItem[];
   proxy?: TemplateProxyInfo | null;
   accounts?: TemplateAccountItem[];
@@ -47,6 +53,14 @@ export function transformTemplateToWindowConfig(
   const deviceSettings = (envConfig.device_settings || {}) as Record<string, unknown>;
   const preferenceSettings = (envConfig.preference_settings || {}) as Record<string, unknown>;
   const projectMetadata = (envConfig.project_metadata || {}) as Record<string, unknown>;
+  const cookies = Array.isArray(envDetail?.cookies)
+    ? envDetail.cookies
+        .map((item) => ({
+          site: item.site,
+          cookieText: item.cookie_text,
+        }))
+        .filter((item) => item.site.length > 0 && item.cookieText.length > 0)
+    : [];
   const urls = Array.isArray(envDetail?.urls)
     ? envDetail.urls.map((item) => item?.url).filter((url: unknown): url is string => {
         return typeof url === 'string' && url.length > 0;
@@ -91,7 +105,7 @@ export function transformTemplateToWindowConfig(
       proxyUuids,
       accountUuids,
       urls,
-      cookies: (windowInfo.cookies as string[]) || [],
+      cookies,
       description: (windowInfo.description as string) || template.description || '',
     },
     basicSettings: {

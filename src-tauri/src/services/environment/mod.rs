@@ -7,8 +7,8 @@ use crate::core::error::Result;
 use serde::{Deserialize, Serialize};
 
 pub use kernel::{
-    AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse, ExtensionInfo,
-    KernelPrepareStatusPayload, KernelService, KernelStatusEmitter, ProxyConfig,
+    AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse, CookieGroup,
+    ExtensionInfo, KernelPrepareStatusPayload, KernelService, KernelStatusEmitter, ProxyConfig,
 };
 pub use launch_runtime::EnvironmentLaunchRuntimeService;
 pub use position_manager::EnvironmentPositionManager;

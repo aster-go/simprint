@@ -24,6 +24,7 @@ import type {
   EnvironmentListResponse,
   EnvironmentDetailResponse,
   CreateResponse,
+  CookieGroupItem,
   UrlItem,
   Environment,
   GroupItem,
@@ -95,18 +96,6 @@ export interface AccountItem {
   account: string;
   status: string;
   remark?: string;
-}
-
-/** Cookie 项 */
-export interface CookieItem {
-  id: number;
-  domain: string;
-  name: string;
-  value: string;
-  path: string;
-  http_only: boolean;
-  secure: boolean;
-  same_site: string;
 }
 
 // ============ 常量 ============
@@ -212,6 +201,8 @@ function transformEnvironmentDto(dto: any): Environment {
     tags: dto.tags || [],
     // 账号列表（完整对象列表）
     accounts: dto.accounts || [],
+    // 扩展列表
+    extensions: dto.extensions || [],
   };
 }
 
@@ -826,8 +817,8 @@ export async function createAccount(request: {
 /**
  * 获取环境 Cookies
  */
-export async function getEnvironmentCookies(uuid: string): Promise<CookieItem[]> {
-  const result = await post<CookieItem[]>(
+export async function getEnvironmentCookies(uuid: string): Promise<CookieGroupItem[]> {
+  const result = await post<CookieGroupItem[]>(
     API_ENDPOINTS.LIST_COOKIES,
     { uuid }
   );
@@ -842,17 +833,12 @@ export async function getEnvironmentCookies(uuid: string): Promise<CookieItem[]>
  */
 export async function addEnvironmentCookie(
   uuid: string,
-  cookie: Omit<CookieItem, 'id'>
+  cookie: CookieGroupItem
 ): Promise<number> {
   const result = await post<{ id: number }>(API_ENDPOINTS.ADD_COOKIES, {
     environment_uuid: uuid,
-    domain: cookie.domain,
-    name: cookie.name,
-    value: cookie.value,
-    path: cookie.path,
-    http_only: cookie.http_only,
-    secure: cookie.secure,
-    same_site: cookie.same_site,
+    site: cookie.site,
+    cookie_text: cookie.cookie_text,
   });
   if (!isSuccess(result)) {
     throw new Error(result.message || '添加 Cookie 失败');
@@ -865,7 +851,7 @@ export async function addEnvironmentCookie(
  */
 export async function addEnvironmentCookies(
   uuid: string,
-  cookies: Omit<CookieItem, 'id'>[]
+  cookies: CookieGroupItem[]
 ): Promise<void> {
   for (const cookie of cookies) {
     await addEnvironmentCookie(uuid, cookie);

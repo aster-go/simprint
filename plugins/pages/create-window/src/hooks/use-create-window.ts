@@ -419,6 +419,7 @@ export function useCreateWindow(
           name: request.name,
           description: request.description,
           group_uuid: request.group_uuid,
+          cookies: request.cookies,
           urls: request.urls,
           config: request.config,
         });

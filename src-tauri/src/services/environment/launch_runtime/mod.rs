@@ -11,15 +11,15 @@ use crate::{
     app::handle::get_app_handle,
     core::error::Result,
     services::environment::{
-        AccountInfo, BatchLaunchRequest, BatchLaunchResult, ExtensionInfo, KernelService,
-        KernelStatusEmitter, ProxyConfig,
+        AccountInfo, BatchLaunchRequest, BatchLaunchResult, CookieGroup, ExtensionInfo,
+        KernelService, KernelStatusEmitter, ProxyConfig,
     },
 };
 
 use self::{
     detail::get_environment_launch_detail,
     fingerprint::build_fingerprint_config,
-    kernel::{get_window_info, resolve_kernel_launch},
+    kernel::resolve_kernel_launch,
     paths::get_launch_paths,
     types::{EnvironmentProxyLike, LaunchPaths},
 };
@@ -50,6 +50,7 @@ impl EnvironmentLaunchRuntimeService {
             request.exe_path,
             request.env_uuid,
             request.cache_path,
+            request.cookies,
             request.urls,
             request.proxy,
             request.fingerprint_config,
@@ -108,6 +109,7 @@ impl EnvironmentLaunchRuntimeService {
             exe_path: resolved_kernel.exe_path,
             env_uuid: env.uuid.clone(),
             cache_path: launch_paths.cache_path.clone(),
+            cookies: normalize_cookies(detail.cookies),
             urls: normalize_urls(detail.urls),
             proxy: build_tauri_proxy_config(detail.proxy),
             fingerprint_config: Some(fingerprint_config),
@@ -137,6 +139,25 @@ fn normalize_accounts(accounts: Option<Vec<AccountInfo>>) -> Option<Vec<AccountI
 
 fn normalize_extensions(extensions: Option<Vec<ExtensionInfo>>) -> Option<Vec<ExtensionInfo>> {
     extensions.filter(|items| !items.is_empty())
+}
+
+fn normalize_cookies(
+    cookies: Option<Vec<self::types::EnvironmentCookieLike>>,
+) -> Option<Vec<CookieGroup>> {
+    let cookies = cookies?
+        .into_iter()
+        .map(|item| CookieGroup {
+            site: item.site.trim().to_string(),
+            cookie_text: item.cookie_text.trim().to_string(),
+        })
+        .filter(|item| !item.site.is_empty() && !item.cookie_text.is_empty())
+        .collect::<Vec<_>>();
+
+    if cookies.is_empty() {
+        None
+    } else {
+        Some(cookies)
+    }
 }
 
 fn normalize_urls(urls: Option<Vec<self::types::EnvironmentUrlLike>>) -> Option<Vec<String>> {

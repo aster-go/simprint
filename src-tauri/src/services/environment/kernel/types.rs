@@ -114,6 +114,12 @@ impl ProxyConfig {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CookieGroup {
+    pub site: String,
+    pub cookie_text: String,
+}
+
 /// 常量定义
 pub const EVENT_KERNEL_PREPARE_STATUS: &str = "kernel-prepare-status";
 pub const SIGNATURE_HASH_SIZE: u64 = 10 * 1024 * 1024;
@@ -125,6 +131,7 @@ pub struct BatchLaunchRequest {
     pub exe_path: String,
     pub env_uuid: String,
     pub cache_path: String,
+    pub cookies: Option<Vec<CookieGroup>>,
     pub urls: Option<Vec<String>>,
     pub proxy: Option<ProxyConfig>,
     pub fingerprint_config: Option<crate::infrastructure::runtime::FingerprintConfig>,

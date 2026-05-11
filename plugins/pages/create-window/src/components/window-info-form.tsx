@@ -17,7 +17,7 @@ import { FaFirefoxBrowser, FaWindows, FaApple, FaLinux, FaGoogle, FaAmazon } fro
 import { SiGooglechrome } from 'react-icons/si';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import type { WindowInfo } from '../types';
+import type { CookieGroup, WindowInfo } from '../types';
 import { CreateWindowSelectAccountDialog } from './create-window-select-account-dialog';
 import { CreateWindowEditCookiesDialog } from './create-window-edit-cookies-dialog';
 import { CreateWindowEditUrlsDialog } from './create-window-edit-urls-dialog';
@@ -185,7 +185,7 @@ export function WindowInfoForm({ value, onChange }: WindowInfoFormProps) {
     });
   };
 
-  const handleCookiesConfirm = (cookies: string[]) => {
+  const handleCookiesConfirm = (cookies: CookieGroup[]) => {
     onChange({
       ...value,
       cookies: cookies,
@@ -491,8 +491,8 @@ export function WindowInfoForm({ value, onChange }: WindowInfoFormProps) {
               <div className="space-y-1">
                 {value.cookies.map((cookie, index) => (
                   <div key={index} className="flex items-center gap-1">
-                    <div className="flex-1 h-8 px-2 flex items-center text-xs font-mono bg-muted rounded overflow-hidden">
-                      <span className="truncate">{cookie}</span>
+                    <div className="flex-1 h-8 px-2 flex items-center text-xs bg-muted rounded overflow-hidden">
+                      <div className="truncate font-medium">{cookie.site}</div>
                     </div>
                     <Button
                       type="button"

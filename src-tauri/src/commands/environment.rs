@@ -7,7 +7,7 @@ use crate::infrastructure::runtime::FingerprintConfig;
 use crate::services::connectivity::ProxyExportItem;
 use crate::services::connectivity::ProxyExportService;
 use crate::services::environment::{
-    AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse,
+    AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse, CookieGroup,
     EnvironmentLaunchRuntimeService, EnvironmentService, KernelService, ProxyConfig,
     RunningEnvironment, StartSyncParams,
 };
@@ -42,6 +42,7 @@ pub async fn launch_environment(
     exe_path: String,
     env_uuid: String,
     cache_path: String,
+    cookies: Option<Vec<CookieGroup>>,
     urls: Option<Vec<String>>,
     proxy: Option<ProxyConfig>,
     fingerprint_config: Option<FingerprintConfig>,
@@ -53,6 +54,7 @@ pub async fn launch_environment(
         exe_path,
         env_uuid,
         cache_path,
+        cookies,
         urls,
         proxy,
         fingerprint_config,

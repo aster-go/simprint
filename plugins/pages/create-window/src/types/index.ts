@@ -34,6 +34,11 @@ export type WindowSizeMode = 'custom' | 'fullscreen';
 
 export type PositionQuadrant = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
+export interface CookieGroup {
+  site: string;
+  cookieText: string;
+}
+
 /**
  * 窗口信息
  */
@@ -46,7 +51,7 @@ export interface WindowInfo {
   proxyUuids: string[]; // 代理 UUID 列表（用于批量创建）
   accountUuids: string[]; // 平台账号 UUID 列表
   urls: string[];
-  cookies: string[];
+  cookies: CookieGroup[];
   description: string; // 描述
 }
 

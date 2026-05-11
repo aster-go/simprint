@@ -64,6 +64,11 @@ export interface EnvironmentUrlLike {
   created_at: string;
 }
 
+export interface EnvironmentCookieLike {
+  site: string;
+  cookie_text: string;
+}
+
 export interface EnvironmentInfoLike {
   id?: number;
   uuid: string;
@@ -73,6 +78,7 @@ export interface EnvironmentInfoLike {
 export interface EnvironmentLaunchDetail {
   environment?: EnvironmentInfoLike;
   config?: Record<string, unknown>;
+  cookies?: EnvironmentCookieLike[];
   urls?: EnvironmentUrlLike[];
   proxy?: EnvironmentProxyLike | null;
   accounts?: EnvironmentAccountLike[];

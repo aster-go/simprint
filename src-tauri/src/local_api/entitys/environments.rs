@@ -65,14 +65,8 @@ pub struct LocalApiEnvironmentUrlItem {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LocalApiEnvironmentCookieItem {
-    pub id: i32,
-    pub domain: String,
-    pub name: String,
-    pub path: Option<String>,
-    pub expires_at: Option<String>,
-    pub http_only: Option<bool>,
-    pub secure: Option<bool>,
-    pub same_site: Option<String>,
+    pub site: String,
+    pub cookie_text: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

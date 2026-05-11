@@ -2,6 +2,16 @@
  * 环境管理 API 类型定义
  */
 
+import type {
+  Environment,
+  GroupSummary,
+  ProxySummary,
+  TagSummary,
+  AccountSummary,
+  GroupItem,
+  TagItem,
+} from '../types';
+
 // 从 types 重新导出，保持类型一致
 export type {
   Environment,
@@ -43,7 +53,7 @@ export interface CreateEnvironmentRequest {
   tag_uuids?: string[];
   account_uuids?: string[];
   proxy_uuid?: string;
-  cookies?: string[];
+  cookies?: CookieGroupItem[];
   urls?: EnvironmentUrlInput[];
   config: EnvironmentConfigRequest;
 }
@@ -72,6 +82,11 @@ export interface UrlItem {
   created_at: string;
 }
 
+export interface CookieGroupItem {
+  site: string;
+  cookie_text: string;
+}
+
 export interface UpdateEnvironmentRequest {
   uuid: string;
   name?: string;
@@ -79,6 +94,7 @@ export interface UpdateEnvironmentRequest {
   icon?: string;
   icon_color?: string;
   group_uuid?: string;
+  cookies?: CookieGroupItem[];
   urls?: EnvironmentUrlInput[];
   config?: EnvironmentConfigRequest;
 }
@@ -154,6 +170,7 @@ export interface EnvironmentListResponse {
 export interface EnvironmentDetailResponse {
   environment: Environment;
   config?: EnvironmentConfigRequest;
+  cookies: CookieGroupItem[];
   urls: UrlItem[];
   tags: TagItem[];
   accounts: Array<{

@@ -79,6 +79,12 @@ pub struct AccountConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CookieGroup {
+    pub site: String,
+    pub cookie_text: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnvConnectionPayload {
     pub env_id: String,
     pub status: String,
@@ -175,6 +181,7 @@ pub struct EnvironmentStartRequest {
     pub exe_path: String,
     pub env_uuid: String,
     pub user_data_dir: String,
+    pub cookies: Option<Vec<CookieGroup>>,
     pub urls: Option<Vec<String>>,
     pub proxy: Option<BrowserProxyConfigPayload>,
     pub fingerprint_config: Option<FingerprintConfig>,

@@ -17,8 +17,8 @@ pub mod verifier;
 
 // 重新导出常用类型
 pub use types::{
-    AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse, ExtensionInfo,
-    KernelPrepareStatusPayload, KernelStatusEmitter, ProxyConfig,
+    AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse, CookieGroup,
+    ExtensionInfo, KernelPrepareStatusPayload, KernelStatusEmitter, ProxyConfig,
 };
 
 /// 内核服务
@@ -156,6 +156,7 @@ impl KernelService {
         exe_path: String,
         env_uuid: String,
         cache_path: String,
+        cookies: Option<Vec<types::CookieGroup>>,
         urls: Option<Vec<String>>,
         proxy: Option<ProxyConfig>,
         fingerprint_config: Option<crate::infrastructure::runtime::FingerprintConfig>,
@@ -168,6 +169,7 @@ impl KernelService {
             exe_path,
             env_uuid,
             cache_path,
+            cookies,
             urls,
             proxy,
             fingerprint_config,

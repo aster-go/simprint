@@ -6,7 +6,7 @@ mod transport;
 
 pub use api::{
     AccountConfig, AuthCommandRequest, AuthCommandResponse, AuthInfo, AuthResponse,
-    BatchLaunchResult, CdpEndpointResponse, DestroyContextRequest, EmptyPayload,
+    BatchLaunchResult, CdpEndpointResponse, CookieGroup, DestroyContextRequest, EmptyPayload,
     EnvConnectionPayload, EnvironmentCommandRequest, EnvironmentCommandResponse,
     EnvironmentResponse, EnvironmentStartRequest, ErrorResponse, FingerprintConfig,
     HandshakeRequest, HandshakeResponse, InitializeContextRequest, RunningEnvironment,
