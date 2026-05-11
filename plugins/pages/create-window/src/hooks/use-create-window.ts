@@ -419,6 +419,7 @@ export function useCreateWindow(
           name: request.name,
           description: request.description,
           group_uuid: request.group_uuid,
+          urls: request.urls,
           config: request.config,
         });
         toast.success(t('actions.updateSuccess') || '窗口更新成功');

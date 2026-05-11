@@ -14,7 +14,14 @@ export interface CreateEnvironmentRequest {
   tag_uuids?: string[];
   account_uuids?: string[];
   proxy_uuid?: string; // 代理 UUID（单个）
+  urls?: EnvironmentUrlInput[];
   config: EnvironmentConfigRequest;
+}
+
+export interface EnvironmentUrlInput {
+  url: string;
+  title?: string;
+  sort_order?: number;
 }
 
 /**

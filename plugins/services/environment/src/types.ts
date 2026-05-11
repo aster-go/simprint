@@ -55,6 +55,15 @@ export interface EnvironmentExtensionLike {
   icon_url?: string;
 }
 
+export interface EnvironmentUrlLike {
+  id: number;
+  environment_uuid: string;
+  url: string;
+  title?: string;
+  sort_order?: number;
+  created_at: string;
+}
+
 export interface EnvironmentInfoLike {
   id?: number;
   uuid: string;
@@ -64,6 +73,7 @@ export interface EnvironmentInfoLike {
 export interface EnvironmentLaunchDetail {
   environment?: EnvironmentInfoLike;
   config?: Record<string, unknown>;
+  urls?: EnvironmentUrlLike[];
   proxy?: EnvironmentProxyLike | null;
   accounts?: EnvironmentAccountLike[];
   extensions?: EnvironmentExtensionLike[];

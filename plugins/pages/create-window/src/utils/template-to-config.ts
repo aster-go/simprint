@@ -9,6 +9,25 @@ import type {
 import { generateWebGL } from './fingerprint-generator';
 import { normalizeFontListConfig, normalizeResolution } from './config-normalizers';
 
+interface TemplateUrlItem {
+  url?: string;
+}
+
+interface TemplateAccountItem {
+  uuid: string;
+}
+
+interface TemplateProxyInfo {
+  uuid: string;
+}
+
+interface TemplateEnvironmentDetailLike {
+  config?: Record<string, unknown>;
+  urls?: TemplateUrlItem[];
+  proxy?: TemplateProxyInfo | null;
+  accounts?: TemplateAccountItem[];
+}
+
 /**
  * 将模板数据转换为前端 WindowConfig
  */
@@ -18,7 +37,7 @@ export function transformTemplateToWindowConfig(
 ): WindowConfig {
   const template = templateResponse;
   // 模板的 config_json 存储的是完整的环境详情数据（EnvironmentDetailResponse 格式）
-  const envDetail = template.config_json as any;
+  const envDetail = (template.config_json || {}) as TemplateEnvironmentDetailLike;
   const envConfig = envDetail?.config || {};
 
   // 提取配置数据
@@ -28,6 +47,11 @@ export function transformTemplateToWindowConfig(
   const deviceSettings = (envConfig.device_settings || {}) as Record<string, unknown>;
   const preferenceSettings = (envConfig.preference_settings || {}) as Record<string, unknown>;
   const projectMetadata = (envConfig.project_metadata || {}) as Record<string, unknown>;
+  const urls = Array.isArray(envDetail?.urls)
+    ? envDetail.urls.map((item) => item?.url).filter((url: unknown): url is string => {
+        return typeof url === 'string' && url.length > 0;
+      })
+    : [];
 
   // 生成关联的 WebGL 默认值
   const webglPair = generateWebGL();
@@ -49,11 +73,11 @@ export function transformTemplateToWindowConfig(
     if (associationsStatus) {
       // 只使用存在的账号
       accountUuids = envDetail.accounts
-        .filter((acc: any) => associationsStatus.accounts_exist[acc.uuid] === true)
-        .map((acc: any) => acc.uuid);
+        .filter((acc) => associationsStatus.accounts_exist[acc.uuid] === true)
+        .map((acc) => acc.uuid);
     } else {
       // 如果没有关联状态信息，使用所有账号（向后兼容）
-      accountUuids = envDetail.accounts.map((acc: any) => acc.uuid);
+      accountUuids = envDetail.accounts.map((acc) => acc.uuid);
     }
   }
 
@@ -66,7 +90,7 @@ export function transformTemplateToWindowConfig(
       searchEngine: (windowInfo.searchEngine as string) || 'Google',
       proxyUuids,
       accountUuids,
-      urls: (windowInfo.urls as string[]) || [],
+      urls,
       cookies: (windowInfo.cookies as string[]) || [],
       description: (windowInfo.description as string) || template.description || '',
     },

@@ -108,7 +108,7 @@ impl EnvironmentLaunchRuntimeService {
             exe_path: resolved_kernel.exe_path,
             env_uuid: env.uuid.clone(),
             cache_path: launch_paths.cache_path.clone(),
-            urls: normalize_urls(detail.config.as_ref()),
+            urls: normalize_urls(detail.urls),
             proxy: build_tauri_proxy_config(detail.proxy),
             fingerprint_config: Some(fingerprint_config),
             accounts: normalize_accounts(detail.accounts),
@@ -139,15 +139,12 @@ fn normalize_extensions(extensions: Option<Vec<ExtensionInfo>>) -> Option<Vec<Ex
     extensions.filter(|items| !items.is_empty())
 }
 
-fn normalize_urls(config: Option<&serde_json::Value>) -> Option<Vec<String>> {
-    let urls = get_window_info(config)
-        .get("urls")
-        .and_then(serde_json::Value::as_array)?
-        .iter()
-        .filter_map(serde_json::Value::as_str)
-        .map(str::trim)
+fn normalize_urls(urls: Option<Vec<self::types::EnvironmentUrlLike>>) -> Option<Vec<String>> {
+    let urls = urls?
+        .into_iter()
+        .map(|item| item.url)
+        .map(|url| url.trim().to_string())
         .filter(|url| !url.is_empty())
-        .map(|url| url.to_string())
         .collect::<Vec<_>>();
 
     if urls.is_empty() { None } else { Some(urls) }

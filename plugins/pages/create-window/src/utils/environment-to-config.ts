@@ -28,6 +28,7 @@ export function transformEnvironmentConfigToWindowConfig(
 
   // 从 detail 中获取代理和分组信息（现在后端直接返回完整对象）
   const proxyUuids = detail.proxy?.uuid ? [detail.proxy.uuid] : [];
+  const urls = (detail.urls || []).map((item) => item.url).filter(Boolean);
 
   // 生成关联的 WebGL 默认值
   const webglPair = generateWebGL();
@@ -43,8 +44,8 @@ export function transformEnvironmentConfigToWindowConfig(
       userAgent: (windowInfo.userAgent as string) || '',
       searchEngine: (windowInfo.searchEngine as string) || 'Google',
       proxyUuids, // 代理 UUID 从 detail.proxy 中获取，转换为数组
-      accountUuids: (detail.accounts || []).map((acc: any) => acc.uuid), // 账号 UUID 列表从 detail.accounts 中获取
-      urls: (windowInfo.urls as string[]) || [],
+      accountUuids: (detail.accounts || []).map((acc) => acc.uuid), // 账号 UUID 列表从 detail.accounts 中获取
+      urls,
       cookies: (windowInfo.cookies as string[]) || [],
       description: (windowInfo.description as string) || environment.description || '',
     },

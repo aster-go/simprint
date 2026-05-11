@@ -24,8 +24,7 @@ import type {
   EnvironmentListResponse,
   EnvironmentDetailResponse,
   CreateResponse,
-  GroupListResponse,
-  TagListResponse,
+  UrlItem,
   Environment,
   GroupItem,
   TagItem,
@@ -108,16 +107,6 @@ export interface CookieItem {
   http_only: boolean;
   secure: boolean;
   same_site: string;
-}
-
-/** URL 项 */
-export interface UrlItem {
-  id: number;
-  environment_uuid: string;
-  url: string;
-  title?: string;
-  sort_order?: number;
-  created_at: string;
 }
 
 // ============ 常量 ============

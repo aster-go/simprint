@@ -46,6 +46,169 @@ export interface BrowserKernelVersion {
   extract_root?: string;
 }
 
+function buildEnvironmentUrls(urls: string[]) {
+  return urls
+    .map((url, index) => ({
+      url: url.trim(),
+      title: undefined,
+      sort_order: index,
+    }))
+    .filter((item) => item.url.length > 0);
+}
+
+function buildWindowInfoPayload(config: WindowConfig['windowInfo']) {
+  return {
+    name: config.name,
+    system: config.system,
+    kernel: config.kernel,
+    userAgent: config.userAgent,
+    searchEngine: config.searchEngine,
+    cookies: config.cookies,
+    description: config.description,
+  };
+}
+
+function buildTemplateEnvironmentData(
+  config: WindowConfig,
+  name: string,
+  description?: string,
+  options?: {
+    group?: {
+      id: number;
+      uuid: string;
+      name: string;
+      description?: string;
+      sort_order?: number;
+    };
+    tags?: Array<{
+      id: number;
+      uuid: string;
+      name: string;
+      color?: string;
+      sort_order?: number;
+    }>;
+    accounts?: Array<{
+      id: number;
+      uuid: string;
+      platform_url: string;
+      platform_name?: string;
+      account: string;
+      status: string;
+      remark?: string;
+    }>;
+    proxy?: {
+      id: number;
+      uuid: string;
+      name: string;
+      host: string;
+      port: number;
+      proxy_type: string;
+      country?: string;
+      city?: string;
+      status: string;
+      latency?: number;
+    };
+  }
+) {
+  const now = new Date().toISOString();
+  const environmentUuid = '00000000-0000-0000-0000-000000000000';
+
+  return {
+    environment: {
+      id: 0,
+      uuid: environmentUuid,
+      user_uuid: environmentUuid,
+      team_uuid: null,
+      name,
+      description: description || null,
+      status: 'active',
+      group_uuid: options?.group?.uuid || null,
+      proxy_uuid: options?.proxy?.uuid || null,
+      system_info: config.windowInfo.system || null,
+      kernel_info: config.windowInfo.kernel || null,
+      fingerprint_summary: null,
+      last_opened_at: null,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    },
+    config: {
+      id: 0,
+      environment_uuid: environmentUuid,
+      window_info: buildWindowInfoPayload(config.windowInfo),
+      basic_settings: config.basicSettings,
+      fingerprint_settings: config.advancedFingerprintSettings,
+      device_settings: config.deviceSettings,
+      preference_settings: config.preferenceSettings,
+      project_metadata: config.projectMetadata,
+      created_at: now,
+      updated_at: now,
+    },
+    urls: buildEnvironmentUrls(config.windowInfo.urls).map((item) => ({
+      id: 0,
+      environment_uuid: environmentUuid,
+      url: item.url,
+      title: item.title || null,
+      sort_order: item.sort_order,
+      created_at: now,
+    })),
+    tags: (options?.tags || []).map((tag) => ({
+      id: tag.id,
+      uuid: tag.uuid,
+      user_uuid: environmentUuid,
+      team_uuid: null,
+      name: tag.name,
+      color: tag.color || null,
+      sort_order: tag.sort_order || null,
+      environments_count: null,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    })),
+    accounts: (options?.accounts || []).map((account) => ({
+      id: account.id,
+      uuid: account.uuid,
+      user_uuid: environmentUuid,
+      team_uuid: null,
+      platform_url: account.platform_url,
+      platform_name: account.platform_name || null,
+      account: account.account,
+      password: null,
+      status: account.status,
+      remark: account.remark || null,
+      usage_count: null,
+      last_used_at: null,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    })),
+    group: options?.group
+      ? {
+          id: options.group.id,
+          uuid: options.group.uuid,
+          name: options.group.name,
+          description: options.group.description || null,
+          sort_order: options.group.sort_order || null,
+        }
+      : null,
+    proxy: options?.proxy
+      ? {
+          id: options.proxy.id,
+          uuid: options.proxy.uuid,
+          name: options.proxy.name,
+          host: options.proxy.host,
+          port: options.proxy.port,
+          proxy_type: options.proxy.proxy_type,
+          country: options.proxy.country || null,
+          city: options.proxy.city || null,
+          status: options.proxy.status,
+          latency: options.proxy.latency || null,
+          last_check_ip: null,
+        }
+      : null,
+  };
+}
+
 /**
  * 获取浏览器内核列表
  * @param platform - 平台：windows/darwin/linux
@@ -79,17 +242,9 @@ export function transformWindowConfigToRequest(
     tag_uuids: options.tagUuids?.length ? options.tagUuids : undefined,
     account_uuids: options.accountUuids?.length ? options.accountUuids : undefined,
     proxy_uuid: options.proxyUuid,
+    urls: buildEnvironmentUrls(config.windowInfo.urls),
     config: {
-      window_info: {
-        name: config.windowInfo.name,
-        system: config.windowInfo.system,
-        kernel: config.windowInfo.kernel,
-        userAgent: config.windowInfo.userAgent,
-        searchEngine: config.windowInfo.searchEngine,
-        urls: config.windowInfo.urls,
-        cookies: config.windowInfo.cookies,
-        description: config.windowInfo.description,
-      },
+      window_info: buildWindowInfoPayload(config.windowInfo),
       basic_settings: {
         language: config.basicSettings.language,
         interfaceLanguage: config.basicSettings.interfaceLanguage,
@@ -351,96 +506,7 @@ export async function saveAsTemplate(
 ): Promise<CreateTemplateResponse> {
   // 构建完整的环境详情数据（EnvironmentDetailResponse 格式）
   // 传递完整的数据对象，包含所有必要信息
-  const environmentData = {
-    environment: {
-      id: 0, // 占位值，模板中不需要真实的 ID
-      uuid: '00000000-0000-0000-0000-000000000000', // 占位值
-      user_uuid: '00000000-0000-0000-0000-000000000000', // 占位值
-      team_uuid: null,
-      name,
-      description: description || null,
-      status: 'active',
-      group_uuid: options?.group?.uuid || null,
-      proxy_uuid: options?.proxy?.uuid || null,
-      system_info: config.windowInfo.system || null,
-      kernel_info: config.windowInfo.kernel || null,
-      fingerprint_summary: null,
-      last_opened_at: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      deleted_at: null,
-    },
-    config: {
-      id: 0, // 占位值
-      environment_uuid: '00000000-0000-0000-0000-000000000000', // 占位值
-      window_info: config.windowInfo,
-      basic_settings: config.basicSettings,
-      fingerprint_settings: config.advancedFingerprintSettings,
-      device_settings: config.deviceSettings,
-      preference_settings: config.preferenceSettings,
-      project_metadata: config.projectMetadata,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    // 标签列表：传递完整的标签对象
-    tags: (options?.tags || []).map((tag) => ({
-      id: tag.id,
-      uuid: tag.uuid,
-      user_uuid: '00000000-0000-0000-0000-000000000000', // 后端会忽略此字段
-      team_uuid: null,
-      name: tag.name,
-      color: tag.color || null,
-      sort_order: tag.sort_order || null,
-      environments_count: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      deleted_at: null,
-    })),
-    // 账号列表：传递完整的账号对象
-    accounts: (options?.accounts || []).map((account) => ({
-      id: account.id,
-      uuid: account.uuid,
-      user_uuid: '00000000-0000-0000-0000-000000000000', // 后端会忽略此字段
-      team_uuid: null,
-      platform_url: account.platform_url,
-      platform_name: account.platform_name || null,
-      account: account.account,
-      password: null, // 不传递密码
-      status: account.status,
-      remark: account.remark || null,
-      usage_count: null,
-      last_used_at: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      deleted_at: null,
-    })),
-    // 分组信息：传递完整的分组对象
-    group: options?.group
-      ? {
-          id: options.group.id,
-          uuid: options.group.uuid,
-          name: options.group.name,
-          description: options.group.description || null,
-          sort_order: options.group.sort_order || null,
-        }
-      : null,
-    // 代理信息：传递完整的代理对象
-    proxy: options?.proxy
-      ? {
-          id: options.proxy.id,
-          uuid: options.proxy.uuid,
-          name: options.proxy.name,
-          host: options.proxy.host,
-          port: options.proxy.port,
-          proxy_type: options.proxy.proxy_type,
-          country: options.proxy.country || null,
-          city: options.proxy.city || null,
-          status: options.proxy.status,
-          latency: options.proxy.latency || null,
-          last_check_ip: null,
-        }
-      : null,
-  };
+  const environmentData = buildTemplateEnvironmentData(config, name, description, options);
 
   const requestData: CreateTemplateRequest = {
     name,
@@ -508,78 +574,7 @@ export async function updateTemplate(
 ): Promise<void> {
   // 构建完整的环境详情数据（EnvironmentDetailResponse 格式）
   // 注意：environment 对象需要包含 EnvironmentDto 的所有必需字段
-  const environmentData = {
-    environment: {
-      id: 0, // 占位值，模板中不需要真实的 ID
-      uuid: '00000000-0000-0000-0000-000000000000', // 占位值
-      user_uuid: '00000000-0000-0000-0000-000000000000', // 占位值
-      team_uuid: null,
-      name,
-      description: description || null,
-      status: 'active',
-      group_uuid: options?.group?.uuid || null,
-      proxy_uuid: options?.proxy?.uuid || null,
-      system_info: config.windowInfo.system || null,
-      kernel_info: config.windowInfo.kernel || null,
-      fingerprint_summary: null,
-      last_opened_at: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      deleted_at: null,
-    },
-    config: {
-      id: 0, // 占位值
-      environment_uuid: '00000000-0000-0000-0000-000000000000', // 占位值
-      window_info: config.windowInfo,
-      basic_settings: config.basicSettings,
-      fingerprint_settings: config.advancedFingerprintSettings,
-      device_settings: config.deviceSettings,
-      preference_settings: config.preferenceSettings,
-      project_metadata: config.projectMetadata,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    tags: (options?.tags || []).map((tag) => ({
-      id: tag.id,
-      uuid: tag.uuid,
-      name: tag.name,
-      color: tag.color || null,
-      sort_order: tag.sort_order || null,
-    })),
-    accounts: (options?.accounts || []).map((account) => ({
-      id: account.id,
-      uuid: account.uuid,
-      platform_url: account.platform_url,
-      platform_name: account.platform_name || null,
-      account: account.account,
-      status: account.status,
-      remark: account.remark || null,
-    })),
-    group: options?.group
-      ? {
-          id: options.group.id,
-          uuid: options.group.uuid,
-          name: options.group.name,
-          description: options.group.description || null,
-          sort_order: options.group.sort_order || null,
-        }
-      : null,
-    proxy: options?.proxy
-      ? {
-          id: options.proxy.id,
-          uuid: options.proxy.uuid,
-          name: options.proxy.name,
-          host: options.proxy.host,
-          port: options.proxy.port,
-          proxy_type: options.proxy.proxy_type,
-          country: options.proxy.country || null,
-          city: options.proxy.city || null,
-          status: options.proxy.status,
-          latency: options.proxy.latency || null,
-          last_check_ip: null,
-        }
-      : null,
-  };
+  const environmentData = buildTemplateEnvironmentData(config, name, description, options);
 
   const requestData = {
     uuid: templateUuid,

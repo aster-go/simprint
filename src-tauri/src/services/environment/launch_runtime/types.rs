@@ -17,6 +17,7 @@ pub(super) struct BrowserKernelVersion {
 pub(super) struct EnvironmentLaunchDetail {
     pub environment: Option<EnvironmentInfoLike>,
     pub config: Option<Value>,
+    pub urls: Option<Vec<EnvironmentUrlLike>>,
     pub proxy: Option<EnvironmentProxyLike>,
     pub accounts: Option<Vec<AccountInfo>>,
     pub extensions: Option<Vec<ExtensionInfo>>,
@@ -36,6 +37,11 @@ pub(super) struct EnvironmentProxyLike {
     pub proxy_type: Option<String>,
     pub username: Option<String>,
     pub password: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub(super) struct EnvironmentUrlLike {
+    pub url: String,
 }
 
 pub(super) const SIMPRINT_KERNEL_CHROMIUM: &str = "SIMPRINT_KERNEL_CHROMIUM";

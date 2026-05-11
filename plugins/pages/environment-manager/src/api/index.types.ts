@@ -44,6 +44,7 @@ export interface CreateEnvironmentRequest {
   account_uuids?: string[];
   proxy_uuid?: string;
   cookies?: string[];
+  urls?: EnvironmentUrlInput[];
   config: EnvironmentConfigRequest;
 }
 
@@ -56,6 +57,21 @@ export interface EnvironmentConfigRequest {
   project_metadata?: Record<string, unknown>;
 }
 
+export interface EnvironmentUrlInput {
+  url: string;
+  title?: string;
+  sort_order?: number;
+}
+
+export interface UrlItem {
+  id: number;
+  environment_uuid: string;
+  url: string;
+  title?: string;
+  sort_order?: number;
+  created_at: string;
+}
+
 export interface UpdateEnvironmentRequest {
   uuid: string;
   name?: string;
@@ -63,6 +79,7 @@ export interface UpdateEnvironmentRequest {
   icon?: string;
   icon_color?: string;
   group_uuid?: string;
+  urls?: EnvironmentUrlInput[];
   config?: EnvironmentConfigRequest;
 }
 
@@ -137,6 +154,7 @@ export interface EnvironmentListResponse {
 export interface EnvironmentDetailResponse {
   environment: Environment;
   config?: EnvironmentConfigRequest;
+  urls: UrlItem[];
   tags: TagItem[];
   accounts: Array<{
     id: number;
