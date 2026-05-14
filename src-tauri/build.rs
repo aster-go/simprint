@@ -92,7 +92,7 @@ mod runtime_assets {
 
     #[derive(Deserialize)]
     struct RuntimeLatestReleasePlatform {
-        r2_url: String,
+        url: String,
         sha256: String,
     }
 
@@ -179,16 +179,16 @@ mod runtime_assets {
             )
         })?;
 
-        if platform.r2_url.trim().is_empty() {
-            return Err("runtime latest.json r2_url is empty".into());
+        if platform.url.trim().is_empty() {
+            return Err("runtime latest.json url is empty".into());
         }
 
         println!(
             "cargo:warning=Downloading simprint-runtime binary from {}",
-            platform.r2_url
+            platform.url
         );
 
-        let bytes = client.get(&platform.r2_url).send()?.error_for_status()?.bytes()?;
+        let bytes = client.get(&platform.url).send()?.error_for_status()?.bytes()?;
 
         let actual_sha256 = sha256_hex(&bytes);
         if !actual_sha256.eq_ignore_ascii_case(&platform.sha256) {

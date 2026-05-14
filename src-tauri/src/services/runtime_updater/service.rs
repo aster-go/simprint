@@ -1,5 +1,4 @@
 use std::fs;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -7,7 +6,6 @@ use std::time::Duration;
 
 use futures::StreamExt;
 use reqwest::Client;
-use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
@@ -22,7 +20,6 @@ use crate::services::updater::UpdateService;
 use super::types::{PreparedRuntimeUpdate, RuntimeLatestRelease};
 
 const POLL_INTERVAL: Duration = Duration::from_secs(180);
-const HEAD_HASH_LIMIT_BYTES: usize = 10 * 1024 * 1024;
 const READY_EVENT_NAME: &str = "app-update-ready";
 
 #[cfg(target_os = "windows")]
@@ -113,10 +110,12 @@ impl RuntimeUpdateService {
             return Ok(());
         }
 
-        if let Some(local_head_hash) =
-            calculate_head_hash_if_exists(&crate::app::runtime::runtime_executable_path()?)?
-        {
-            if local_head_hash.eq_ignore_ascii_case(&platform.head_sha256_10mb) {
+        let runtime_path = crate::app::runtime::runtime_executable_path()?;
+        if runtime_path.exists() {
+            let local_hash = calculate_file_hash(&runtime_path).map_err(|error| {
+                Error::UpdateCheckFailed(format!("runtime 本地文件哈希计算失败: {}", error))
+            })?;
+            if local_hash.eq_ignore_ascii_case(&platform.sha256) {
                 let mut state = self.state.lock().await;
                 state.prepared = None;
                 return Ok(());
@@ -181,7 +180,7 @@ impl RuntimeUpdateService {
         release: &RuntimeLatestRelease,
         platform: &super::types::RuntimeLatestReleasePlatform,
     ) -> Result<PreparedRuntimeUpdate> {
-        if platform.r2_url.trim().is_empty() {
+        if platform.url.trim().is_empty() {
             return Err("runtime latest.json 未提供下载地址".into());
         }
 
@@ -193,7 +192,7 @@ impl RuntimeUpdateService {
         let tasks_file = runtime_dir.join("runtime-update-tasks.json");
         let backup_path = runtime_dir.join(format!("simprint-runtime-{}.bak", release.version));
 
-        download_to_file(&platform.r2_url, &artifact_path).await?;
+        download_to_file(&platform.url, &artifact_path).await?;
 
         let actual_hash = calculate_file_hash(&artifact_path).map_err(|error| {
             Error::UpdateCheckFailed(format!("runtime 更新包校验失败: {}", error))
@@ -262,30 +261,6 @@ impl RuntimeUpdateService {
 
 fn runtime_update_dir() -> Result<PathBuf> {
     Ok(crate::core::paths::PathManager::get_updater_dir()?.join("runtime"))
-}
-
-fn calculate_head_hash_if_exists(file_path: &Path) -> Result<Option<String>> {
-    if !file_path.exists() {
-        return Ok(None);
-    }
-
-    let mut file = fs::File::open(file_path)?;
-    let mut hasher = Sha256::new();
-    let mut remaining = HEAD_HASH_LIMIT_BYTES;
-    let mut buffer = [0u8; 8192];
-
-    while remaining > 0 {
-        let to_read = remaining.min(buffer.len());
-        let bytes_read = file.read(&mut buffer[..to_read])?;
-        if bytes_read == 0 {
-            break;
-        }
-
-        hasher.update(&buffer[..bytes_read]);
-        remaining -= bytes_read;
-    }
-
-    Ok(Some(format!("{:x}", hasher.finalize())))
 }
 
 async fn download_to_file(url: &str, target_path: &Path) -> Result<()> {
