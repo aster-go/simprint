@@ -4,6 +4,7 @@ set -euo pipefail
 SERVER_IMAGE="${SIMPRINT_SERVER_IMAGE:-ghcr.io/simprint/simprint-server:latest}"
 UPDATE_IMAGE="${SIMPRINT_UPDATE_IMAGE:-ghcr.io/simprint/simprint-update-server:latest}"
 CONSOLE_IMAGE="${SIMPRINT_CONSOLE_IMAGE:-ghcr.io/simprint/simprint-console-server:latest}"
+EXTENSION_SYNC_IMAGE="${SIMPRINT_EXTENSION_SYNC_IMAGE:-ghcr.io/simprint/simprint-extension-sync-server:latest}"
 
 TARGET_DIR="$PWD/simprint-self-hosted"
 CONFIG_DIR="$TARGET_DIR/configs"
@@ -11,6 +12,8 @@ COMPOSE_FILE="$TARGET_DIR/docker-compose.yml"
 SERVER_CONFIG_FILE="$CONFIG_DIR/server.toml"
 UPDATE_CONFIG_FILE="$CONFIG_DIR/update.toml"
 CONSOLE_CONFIG_FILE="$CONFIG_DIR/console.toml"
+EXTENSION_SYNC_CONFIG_FILE="$CONFIG_DIR/config.prod.yaml"
+EXTENSION_SYNC_PRESETS_FILE="$CONFIG_DIR/extensions.yaml"
 
 DEFAULT_APP_SECRET="Nuexz9Y2hRc5Z6HK7Atb"
 DEFAULT_POSTGRES_PASSWORD="simprint-postgres-password"
@@ -109,6 +112,28 @@ require_secret_with_default() {
   fi
 
   printf -v "$var_name" '%s' "$current_value"
+}
+
+create_console_api_key() {
+  local output=""
+  local api_key_line=""
+
+  output=$(
+    cd "$TARGET_DIR"
+    "${COMPOSE_CMD[@]}" run --rm -T --no-deps simprint-console-gateway \
+      --config /app/configs/console.toml apikey create --name "extension-sync"
+  )
+
+  api_key_line=$(printf '%s\n' "$output" | sed -n 's/^[[:space:]]*X-API-KEY: //p' | tail -n 1)
+
+  if [ -z "$api_key_line" ] || [ "${api_key_line#*:}" = "$api_key_line" ]; then
+    echo "Error: failed to create Console API key for extension sync." >&2
+    echo "$output" >&2
+    exit 1
+  fi
+
+  EXTENSION_SYNC_API_KEY_ID="${api_key_line%%:*}"
+  EXTENSION_SYNC_API_KEY_SECRET="${api_key_line#*:}"
 }
 
 if ! check_command docker; then
@@ -269,6 +294,47 @@ max_proxies = 99999
 max_rpa_tasks = 99999
 EOF
 
+cat >"$EXTENSION_SYNC_PRESETS_FILE" <<'EOF'
+# Simprint Extension Sync Server preset extensions
+
+preset_extensions: []
+
+categories:
+  - id: "security"
+    name: "安全隐私"
+    name_en: "Security & Privacy"
+
+  - id: "development"
+    name: "开发工具"
+    name_en: "Developer Tools"
+
+  - id: "productivity"
+    name: "效率工具"
+    name_en: "Productivity"
+
+  - id: "automation"
+    name: "自动化"
+    name_en: "Automation"
+
+  - id: "other"
+    name: "其他"
+    name_en: "Other"
+
+high_risk_permissions:
+  - "debugger"
+  - "cookies"
+  - "webRequest"
+  - "webRequestBlocking"
+  - "<all_urls>"
+  - "nativeMessaging"
+  - "proxy"
+  - "history"
+  - "downloads"
+  - "management"
+  - "privacy"
+  - "browsingData"
+EOF
+
 cat >"$COMPOSE_FILE" <<EOF
 services:
   postgres:
@@ -364,6 +430,20 @@ services:
     networks:
       - simprint-network
 
+  simprint-extension-sync:
+    image: $EXTENSION_SYNC_IMAGE
+    container_name: simprint-extension-sync
+    depends_on:
+      - simprint-console-gateway
+    ports:
+      - "18080:8080"
+    volumes:
+      - ./configs:/app/configs:ro
+      - simprint-extension-sync-data:/app/storage
+    restart: unless-stopped
+    networks:
+      - simprint-network
+
 networks:
   simprint-network:
     name: simprint-network
@@ -372,6 +452,7 @@ volumes:
   simprint-postgres-data:
   simprint-redis-data:
   simprint-secret-data:
+  simprint-extension-sync-data:
 EOF
 
 echo "Using compose command: ${COMPOSE_CMD[*]}"
@@ -379,14 +460,50 @@ echo "Working directory: $TARGET_DIR"
 echo "Server image: $SERVER_IMAGE"
 echo "Update image: $UPDATE_IMAGE"
 echo "Console image: $CONSOLE_IMAGE"
+echo "Extension sync image: $EXTENSION_SYNC_IMAGE"
 echo "Generated files:"
 echo "  - $COMPOSE_FILE"
 echo "  - $SERVER_CONFIG_FILE"
 echo "  - $UPDATE_CONFIG_FILE"
 echo "  - $CONSOLE_CONFIG_FILE"
+echo "  - $EXTENSION_SYNC_CONFIG_FILE"
+echo "  - $EXTENSION_SYNC_PRESETS_FILE"
 
 (
   cd "$TARGET_DIR"
-  "${COMPOSE_CMD[@]}" up -d
+  "${COMPOSE_CMD[@]}" up -d postgres redis simprint-server simprint-update-gateway simprint-console-gateway
+)
+
+create_console_api_key
+
+cat >"$EXTENSION_SYNC_CONFIG_FILE" <<EOF
+# Simprint Extension Sync Server configuration
+
+backend:
+  api_url: "http://simprint-console-gateway:40043/api/v1"
+  api_key_id: "$EXTENSION_SYNC_API_KEY_ID"
+  api_key_secret: "$EXTENSION_SYNC_API_KEY_SECRET"
+
+sync:
+  full_interval_hours: 24
+  update_check_interval_minutes: 60
+  concurrent_downloads: 5
+  max_retries: 3
+
+logging:
+  level: "INFO"
+  format: "console"
+
+http:
+  host: "0.0.0.0"
+  port: 8080
+
+storage:
+  sqlite_path: "storage/extensions.db"
+EOF
+
+(
+  cd "$TARGET_DIR"
+  "${COMPOSE_CMD[@]}" up -d simprint-extension-sync
   "${COMPOSE_CMD[@]}" ps
 )
