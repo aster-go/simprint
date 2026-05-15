@@ -181,6 +181,38 @@ export function WorkspaceSwitchDialog({ open, onOpenChange }: WorkspaceSwitchDia
   const [deleting, setDeleting] = useState(false);
   const [switching, setSwitching] = useState(false);
 
+  const loadWorkspaces = async () => {
+    setLoading(true);
+    try {
+      const response = await getMyWorkspaces();
+      updateFromResponse(response);
+      if (response.current_workspace_uuid) {
+        setCurrentWorkspace(response.current_workspace_uuid);
+        setSelectedId(response.current_workspace_uuid);
+      } else {
+        setCurrentWorkspace(null);
+        setSelectedId(null);
+      }
+
+      const cardsWithQuota = await Promise.all(
+        response.workspaces.map(async (workspace) => {
+          try {
+            const quota = await getWorkspaceQuota({ workspace_uuid: workspace.uuid });
+            return { ...workspace, quota };
+          } catch {
+            return { ...workspace, quota: undefined };
+          }
+        })
+      );
+      setWorkspaceCards(cardsWithQuota);
+    } catch (e) {
+      console.error('Failed to load workspaces:', e);
+      toast.error(t('workspace.loadFailed') || '加载工作空间失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 加载工作空间列表和配额
   useEffect(() => {
     if (!open) {
@@ -188,36 +220,6 @@ export function WorkspaceSwitchDialog({ open, onOpenChange }: WorkspaceSwitchDia
       setSelectedId(null);
       return;
     }
-    const loadWorkspaces = async () => {
-      setLoading(true);
-      try {
-        const response = await getMyWorkspaces();
-        updateFromResponse(response);
-        // 同步到 auth store
-        if (response.current_workspace_uuid) {
-          setCurrentWorkspace(response.current_workspace_uuid);
-          setSelectedId(response.current_workspace_uuid);
-        }
-
-        // 加载配额信息
-        const cardsWithQuota = await Promise.all(
-          response.workspaces.map(async (workspace) => {
-            try {
-              const quota = await getWorkspaceQuota({ workspace_uuid: workspace.uuid });
-              return { ...workspace, quota };
-            } catch {
-              return { ...workspace, quota: undefined };
-            }
-          })
-        );
-        setWorkspaceCards(cardsWithQuota);
-      } catch (e) {
-        console.error('Failed to load workspaces:', e);
-        toast.error(t('workspace.loadFailed') || '加载工作空间失败');
-      } finally {
-        setLoading(false);
-      }
-    };
     void loadWorkspaces();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -287,12 +289,13 @@ export function WorkspaceSwitchDialog({ open, onOpenChange }: WorkspaceSwitchDia
     setSubmitting(true);
     try {
       if (createDialogOpen) {
-        const response = await createWorkspace({
+        await createWorkspace({
           name: formData.name,
           workspace_type: 'personal', // 默认个人类型
         });
         toast.success(t('workspace.createSuccess') || '创建工作空间成功');
         setCreateDialogOpen(false);
+        await loadWorkspaces();
         refreshWorkspaces();
         refreshAll();
       } else if (editDialogOpen && selectedWorkspace) {
@@ -334,12 +337,8 @@ export function WorkspaceSwitchDialog({ open, onOpenChange }: WorkspaceSwitchDia
       toast.success(t('workspace.deleteSuccess') || '删除工作空间成功');
       setDeleteDialogOpen(false);
       setSelectedWorkspace(null);
+      await loadWorkspaces();
       refreshWorkspaces();
-      // 如果删除的是当前工作空间，需要重置
-      if (selectedWorkspace.uuid === currentWorkspaceUuid) {
-        setCurrentWorkspace(null);
-        setSelectedId(null);
-      }
     } catch (e) {
       toast.error(
         e instanceof Error ? e.message : t('workspace.deleteFailed') || '删除工作空间失败'
