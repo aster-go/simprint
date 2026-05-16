@@ -20,6 +20,7 @@ import { useProxyHandlers } from './hooks/use-proxy-handlers';
 import { selectAndReadProxyFile, type ImportProxyItem } from './utils/import-export';
 import type { Proxy } from './types';
 import { ITEMS_PER_PAGE } from './constants';
+import { MihomoPage } from './mihomo/mihomo-page';
 
 const ProxyCenterPage: React.FC = () => {
   useTranslation('proxy'); // 注册 i18n namespace
@@ -276,6 +277,19 @@ try {
   console.log('[proxy-center] Route contributed at module load: /proxy');
 } catch (error) {
   console.warn('[proxy-center] Failed to contribute route at module load:', error);
+}
+
+try {
+  extensionRegistry.contribute('routes', {
+    contributorId: 'proxy-center-mihomo',
+    value: {
+      path: '/proxy/mihomo',
+      Component: MihomoPage,
+    },
+    priority: 10,
+  });
+} catch (error) {
+  console.warn('[proxy-center] Failed to contribute Mihomo route at module load:', error);
 }
 
 try {

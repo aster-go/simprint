@@ -15,6 +15,7 @@ use crate::infrastructure::main_server::client::MainServerRequestClient;
 use crate::local_api::LocalApiManager;
 use crate::mcp::McpManager;
 use crate::services::environment::{EnvironmentPositionManager, EnvironmentStatusManager};
+use crate::services::mihomo::MihomoManager;
 use crate::services::runtime_updater::RuntimeUpdateService;
 
 /// 应用上下文
@@ -41,6 +42,9 @@ pub struct AppContext {
 
     /// MCP 服务管理器
     pub mcp_manager: Arc<McpManager>,
+
+    /// Mihomo 集成管理器
+    pub mihomo_manager: Arc<MihomoManager>,
 
     /// simprint-runtime 进程管理器
     pub simprint_runtime_manager: Arc<SimprintRuntimeManager>,
@@ -90,6 +94,9 @@ impl AppContext {
         // 初始化 MCP 管理器
         let mcp_manager = Arc::new(McpManager::new());
 
+        // 初始化 Mihomo 管理器
+        let mihomo_manager = Arc::new(MihomoManager::new());
+
         // 初始化 simprint-runtime 管理器
         let simprint_runtime_manager = Arc::new(SimprintRuntimeManager::new());
 
@@ -104,6 +111,7 @@ impl AppContext {
             main_server_client,
             local_api_manager,
             mcp_manager,
+            mihomo_manager,
             simprint_runtime_manager,
             runtime_update_service,
         })

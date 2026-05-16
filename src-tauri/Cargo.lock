@@ -5209,6 +5209,7 @@ dependencies = [
  "hex",
  "hkdf",
  "include_dir",
+ "indexmap 2.13.0",
  "keyring",
  "lazy_static",
  "log",

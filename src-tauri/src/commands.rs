@@ -8,6 +8,7 @@ pub mod local_api;
 pub mod local_extensions;
 pub mod logging;
 pub mod mcp;
+pub mod mihomo;
 pub mod network;
 pub mod security;
 pub mod store;
@@ -110,6 +111,12 @@ pub fn register_handles() -> impl Fn(Invoke<tauri::Wry>) -> bool + Send + Sync +
         mcp::start_mcp_runtime,
         mcp::reload_mcp_runtime,
         mcp::stop_mcp_runtime,
+        mihomo::test_and_attach_mihomo,
+        mihomo::get_mihomo_status,
+        mihomo::get_mihomo_connection_info,
+        mihomo::get_mihomo_overview,
+        mihomo::test_mihomo_proxy_delay,
+        mihomo::test_mihomo_group_delays,
         // Store commands
         store::get_store_key,
         store::set_store_key,
