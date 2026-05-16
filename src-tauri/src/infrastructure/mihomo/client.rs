@@ -89,6 +89,19 @@ impl MihomoClient {
         }))
     }
 
+    pub async fn reload_config(&self, config_path: &str) -> Result<()> {
+        let payload = serde_json::json!({
+            "path": config_path,
+            "payload": "",
+        });
+        self.put_json_segments_without_body(
+            &["configs"],
+            &[("force", "true".to_string())],
+            &payload,
+        )
+        .await
+    }
+
     async fn get_json_segments<T>(&self, segments: &[&str], query: &[(&str, String)]) -> Result<T>
     where
         T: serde::de::DeserializeOwned,
@@ -126,5 +139,44 @@ impl MihomoClient {
             .json::<T>()
             .await
             .with_context(|| format!("解析 Mihomo 接口响应失败: {path_label}"))
+    }
+
+    async fn put_json_segments_without_body(
+        &self,
+        segments: &[&str],
+        query: &[(&str, String)],
+        payload: &Value,
+    ) -> Result<()> {
+        let mut url = self.base_url.clone();
+        {
+            let mut path_segments =
+                url.path_segments_mut().map_err(|_| anyhow!("构建 Mihomo 请求地址失败"))?;
+            path_segments.pop_if_empty();
+            for segment in segments {
+                path_segments.push(segment);
+            }
+        }
+        if !query.is_empty() {
+            let mut query_pairs = url.query_pairs_mut();
+            for (key, value) in query {
+                query_pairs.append_pair(key, value);
+            }
+        }
+        let mut request = self.http.put(url).json(payload);
+        let path_label = format!("/{}", segments.join("/"));
+
+        if !self.secret.is_empty() {
+            request = request.header(header::AUTHORIZATION, format!("Bearer {}", self.secret));
+        }
+
+        let response = request
+            .send()
+            .await
+            .with_context(|| format!("请求 Mihomo 接口失败: {path_label}"))?
+            .error_for_status()
+            .with_context(|| format!("Mihomo 接口返回异常状态: {path_label}"))?;
+
+        let _ = response.bytes().await;
+        Ok(())
     }
 }

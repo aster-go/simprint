@@ -18,6 +18,7 @@ export type { Proxy };
 
 interface ProxyTableRowProps {
   proxy: Proxy;
+  selectable?: boolean;
   isSelected?: boolean;
   isTesting?: boolean;
   onSelect?: (uuid: string, selected: boolean) => void;
@@ -28,6 +29,7 @@ interface ProxyTableRowProps {
 
 export function ProxyTableRow({
   proxy,
+  selectable = true,
   isSelected = false,
   isTesting = false,
   onSelect,
@@ -96,10 +98,12 @@ export function ProxyTableRow({
   return (
     <DataTableRowContainer isSelected={isSelected}>
       {/* 选择框列 */}
-      <DataTableCheckboxCell
-        isSelected={isSelected}
-        onSelect={(selected) => onSelect?.(proxy.uuid, selected)}
-      />
+      {selectable && (
+        <DataTableCheckboxCell
+          isSelected={isSelected}
+          onSelect={(selected) => onSelect?.(proxy.uuid, selected)}
+        />
+      )}
 
       {/* 名称列 */}
       <DataTableCell>
@@ -165,7 +169,7 @@ export function ProxyTableRow({
         {/* 测试按钮 */}
         <button
           onClick={() => onTest?.(proxy)}
-          disabled={isTesting}
+          disabled={isTesting || !onTest}
           className="h-7 w-7 flex items-center justify-center rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           title={t('table.actions.test')}
         >
@@ -176,29 +180,35 @@ export function ProxyTableRow({
           )}
         </button>
         {/* 更多操作 */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="h-7 w-7 flex items-center justify-center rounded hover:bg-accent text-muted-foreground hover:text-foreground"
-              title={t('table.actions.more')}
-            >
-              <MoreVertical className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={() => onEdit?.(proxy)} className="cursor-pointer">
-              <Edit className="w-4 h-4 mr-2" />
-              <span>{t('table.actions.edit')}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onDelete?.(proxy)}
-              className="cursor-pointer text-destructive focus:text-destructive"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              <span>{t('table.actions.delete')}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {(onEdit || onDelete) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="h-7 w-7 flex items-center justify-center rounded hover:bg-accent text-muted-foreground hover:text-foreground"
+                title={t('table.actions.more')}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(proxy)} className="cursor-pointer">
+                  <Edit className="w-4 h-4 mr-2" />
+                  <span>{t('table.actions.edit')}</span>
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <DropdownMenuItem
+                  onClick={() => onDelete(proxy)}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  <span>{t('table.actions.delete')}</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </DataTableActionsCell>
     </DataTableRowContainer>
   );

@@ -1,8 +1,19 @@
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Gauge, Loader2, RefreshCw, Settings2, ShieldAlert } from 'lucide-react';
+import {
+  Check,
+  CheckCheck,
+  Gauge,
+  Loader2,
+  RefreshCw,
+  Settings2,
+  ShieldAlert,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import {
   Card,
@@ -14,7 +25,9 @@ import {
 import { MihomoConnectDialog } from './mihomo-connect-dialog';
 import { ClashIcon } from './clash-icon';
 import {
+  applyMihomoNodeSelection,
   getMihomoOverview,
+  getMihomoNodeSelection,
   testMihomoGroupDelays,
   testMihomoProxyDelay,
 } from './api';
@@ -23,6 +36,41 @@ import type { MihomoOverview, MihomoProxyDelayResult } from './types';
 interface NodeDelayState {
   delayMs: number | null;
   status: 'idle' | 'testing' | 'success' | 'failed';
+}
+
+interface MihomoHeaderActionButtonProps {
+  label: string;
+  icon: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+function MihomoHeaderActionButton({
+  label,
+  icon,
+  onClick,
+  disabled = false,
+}: MihomoHeaderActionButtonProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-lg"
+          className="h-10 w-10 rounded-lg text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+          aria-label={label}
+          onClick={onClick}
+          disabled={disabled}
+        >
+          {icon}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={6} className="text-xs">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function MihomoPage() {
@@ -35,14 +83,23 @@ export function MihomoPage() {
   const [nodeDelayStates, setNodeDelayStates] = useState<Record<string, NodeDelayState>>({});
   const [testingGroups, setTestingGroups] = useState<Record<string, boolean>>({});
   const [testedGroups, setTestedGroups] = useState<Record<string, boolean>>({});
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedNodeNames, setSelectedNodeNames] = useState<Set<string>>(new Set());
+  const [persistedNodeNames, setPersistedNodeNames] = useState<string[]>([]);
+  const [applyingSelection, setApplyingSelection] = useState(false);
 
   const loadOverview = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const nextOverview = await getMihomoOverview();
+      const [nextOverview, selectionSnapshot] = await Promise.all([
+        getMihomoOverview(),
+        getMihomoNodeSelection(),
+      ]);
       setOverview(nextOverview);
+      setPersistedNodeNames(selectionSnapshot.selected_node_names);
+      setSelectedNodeNames(new Set(selectionSnapshot.selected_node_names));
     } catch (invokeError) {
       setOverview(null);
       setError(
@@ -159,6 +216,56 @@ export function MihomoPage() {
     [applyDelayResults, t]
   );
 
+  const toggleNodeSelection = useCallback((nodeName: string) => {
+    setSelectedNodeNames((current) => {
+      const next = new Set(current);
+      if (next.has(nodeName)) {
+        next.delete(nodeName);
+      } else {
+        next.add(nodeName);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleEnterSelectionMode = useCallback(() => {
+    setSelectionMode(true);
+    setSelectedNodeNames(new Set(persistedNodeNames));
+  }, [persistedNodeNames]);
+
+  const handleCancelSelection = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedNodeNames(new Set(persistedNodeNames));
+  }, [persistedNodeNames]);
+
+  const handleApplySelection = useCallback(async () => {
+    const nextSelectedNodeNames = Array.from(selectedNodeNames);
+
+    setApplyingSelection(true);
+    try {
+      await applyMihomoNodeSelection({
+        selected_node_names: nextSelectedNodeNames,
+      });
+      setPersistedNodeNames(nextSelectedNodeNames);
+      setSelectionMode(false);
+      toast.success(
+        t('mihomo.page.selectionApplied', {
+          defaultValue: '已应用本地节点选择。',
+        })
+      );
+    } catch (invokeError) {
+      toast.error(
+        invokeError instanceof Error
+          ? invokeError.message
+          : t('mihomo.page.selectionApplyFailed', {
+              defaultValue: '应用节点选择失败',
+            })
+      );
+    } finally {
+      setApplyingSelection(false);
+    }
+  }, [selectedNodeNames, t]);
+
   return (
     <div className="flex h-[calc(100vh-50px)] flex-col bg-background/10">
       <header className="flex items-center justify-between border-b border-border bg-background/10 px-6 py-2 backdrop-blur-2xl">
@@ -174,19 +281,53 @@ export function MihomoPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
-            <Settings2 className="mr-1.5 h-3.5 w-3.5" />
-            {t('mihomo.page.settings', { defaultValue: '连接设置' })}
-          </Button>
-          <Button size="sm" onClick={() => void loadOverview()} disabled={loading}>
-            {loading ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            {t('mihomo.page.refresh', { defaultValue: '刷新数据' })}
-          </Button>
+        <div className="flex items-center gap-1.5">
+          {selectionMode ? (
+            <div className="flex items-center gap-1.5">
+              <MihomoHeaderActionButton
+                label={t('mihomo.page.cancelSelection', { defaultValue: '取消选择' })}
+                icon={<X className="h-4 w-4" />}
+                onClick={handleCancelSelection}
+                disabled={applyingSelection}
+              />
+              <MihomoHeaderActionButton
+                label={t('mihomo.page.applySelection', { defaultValue: '应用选择' })}
+                icon={
+                  applyingSelection ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )
+                }
+                onClick={() => void handleApplySelection()}
+                disabled={applyingSelection}
+              />
+            </div>
+          ) : (
+            <MihomoHeaderActionButton
+              label={t('mihomo.page.editSelection', { defaultValue: '选择节点' })}
+              icon={<CheckCheck className="h-4 w-4" />}
+              onClick={handleEnterSelectionMode}
+            />
+          )}
+          <div className="mx-1 h-5 w-px shrink-0 bg-border/80" aria-hidden="true" />
+          <MihomoHeaderActionButton
+            label={t('mihomo.page.settings', { defaultValue: '连接设置' })}
+            icon={<Settings2 className="h-4 w-4" />}
+            onClick={() => setConfigOpen(true)}
+          />
+          <MihomoHeaderActionButton
+            label={t('mihomo.page.refresh', { defaultValue: '刷新数据' })}
+            icon={
+              loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )
+            }
+            onClick={() => void loadOverview()}
+            disabled={loading}
+          />
         </div>
       </header>
 
@@ -315,8 +456,29 @@ export function MihomoPage() {
                   return (
                     <div
                       key={node.name}
-                      className="group flex min-h-[88px] flex-col items-start justify-between rounded-xl border border-border/60 bg-background/75 px-4 py-2.5 text-left transition-colors hover:border-primary/30 hover:bg-background"
+                      className={cn(
+                        'group relative flex min-h-[88px] flex-col items-start justify-between rounded-xl border border-border/60 bg-background/75 px-4 py-2.5 text-left transition-colors hover:border-primary/30 hover:bg-background',
+                        selectionMode && selectedNodeNames.has(node.name) && 'border-primary bg-primary/5'
+                      )}
+                      onClick={selectionMode ? () => toggleNodeSelection(node.name) : undefined}
                     >
+                      {selectionMode && (
+                        <button
+                          type="button"
+                          className={cn(
+                            'absolute right-3 top-3 inline-flex h-5 w-5 items-center justify-center rounded border transition-colors',
+                            selectedNodeNames.has(node.name)
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-border/70 bg-background/80 text-transparent'
+                          )}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleNodeSelection(node.name);
+                          }}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       <div className="w-full">
                         <div className="line-clamp-2 text-[14px] font-semibold leading-5 text-foreground">
                           {node.name}
@@ -343,7 +505,10 @@ export function MihomoPage() {
                               ? 'opacity-100'
                               : 'opacity-0 group-hover:opacity-100'
                           )}
-                          onClick={() => void handleTestNode(node.name)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleTestNode(node.name);
+                          }}
                         >
                           {delayState?.status === 'testing' ? (
                             <>

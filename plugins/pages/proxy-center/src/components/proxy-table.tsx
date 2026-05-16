@@ -1,5 +1,6 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Network, X } from 'lucide-react';
+import { ChevronDown, Network, PlugZap, X } from 'lucide-react';
 import { DataTable, type ColumnDef } from '@/components/data-table';
 import {
   DropdownMenu,
@@ -17,17 +18,24 @@ export type { Proxy };
  */
 const EmptyState: React.FC<{
   t: (key: string, options?: Record<string, unknown>) => string;
-}> = ({ t }) => (
+  title?: string;
+  description?: string;
+  icon?: ReactNode;
+}> = ({ t, title, description, icon }) => (
   <div className="flex flex-col items-center justify-center py-10 px-4">
     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center mb-4">
-      <Network className="h-8 w-8 text-blue-500/60" />
+      {icon || <Network className="h-8 w-8 text-blue-500/60" />}
     </div>
-    <h4 className="text-sm font-medium text-foreground mb-1">{t('table.empty')}</h4>
+    <h4 className="text-sm font-medium text-foreground mb-1">
+      {title || t('table.empty')}
+    </h4>
     <p className="text-xs text-muted-foreground text-center max-w-[240px]">
-      {t('table.emptyDescription', { defaultValue: '添加第一个代理，开始管理您的代理服务器' })}
+      {description || t('table.emptyDescription', { defaultValue: '添加第一个代理，开始管理您的代理服务器' })}
     </p>
   </div>
 );
+
+const EmptyStateAlertIcon = () => <PlugZap className="h-8 w-8 text-amber-500/70" />;
 
 interface ProxyTableProps {
   proxies: Proxy[];
@@ -41,6 +49,9 @@ interface ProxyTableProps {
   onEdit?: (proxy: Proxy) => void;
   onDelete?: (proxy: Proxy) => void;
   loading?: boolean;
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+  emptyStateVariant?: 'default' | 'warning';
 }
 
 export function ProxyTable({
@@ -55,8 +66,12 @@ export function ProxyTable({
   onEdit,
   onDelete,
   loading = false,
+  emptyStateTitle,
+  emptyStateDescription,
+  emptyStateVariant = 'default',
 }: ProxyTableProps) {
   const { t } = useTranslation('proxy');
+  const selectable = !!(onSelect || onSelectAll);
 
   const getProxyTypeLabel = () => {
     switch (proxyTypeFilter) {
@@ -214,14 +229,22 @@ export function ProxyTable({
       getRowKey={(proxy) => proxy.uuid}
       loading={loading}
       skeletonRows={8}
-      emptyText={<EmptyState t={t} />}
-      selectable
+      emptyText={
+        <EmptyState
+          t={t}
+          title={emptyStateTitle}
+          description={emptyStateDescription}
+          icon={emptyStateVariant === 'warning' ? <EmptyStateAlertIcon /> : undefined}
+        />
+      }
+      selectable={selectable}
       selectedIds={selectedIds}
       onSelectionChange={handleSelectionChange}
       renderRow={({ row, rowKey, isSelected, onSelect: handleSelect }) => (
         <ProxyTableRow
           key={rowKey}
           proxy={row}
+          selectable={selectable}
           isSelected={isSelected}
           isTesting={testingIds.has(row.uuid)}
           onSelect={(uuid, selected) => handleSelect(selected)}

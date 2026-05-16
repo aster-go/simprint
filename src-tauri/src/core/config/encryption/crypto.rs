@@ -243,10 +243,7 @@ fn transform_shift(len: usize, key: &[u8; 16]) -> usize {
         return 0;
     }
 
-    let seed = key
-        .iter()
-        .take(4)
-        .fold(0usize, |acc, byte| (acc << 8) | (*byte as usize));
+    let seed = key.iter().take(4).fold(0usize, |acc, byte| (acc << 8) | (*byte as usize));
     (seed.wrapping_add(len).wrapping_add(13)) % len
 }
 
@@ -257,9 +254,7 @@ mod tests {
     #[test]
     fn roundtrip_preserves_all_lengths_up_to_1024() {
         for len in 0..=1024usize {
-            let input = (0..len)
-                .map(|index| ((index * 31 + 17) % 256) as u8)
-                .collect::<Vec<_>>();
+            let input = (0..len).map(|index| ((index * 31 + 17) % 256) as u8).collect::<Vec<_>>();
             let encrypted = encrypt(&input).expect("encrypt should succeed");
             let decrypted = decrypt(&encrypted).expect("decrypt should succeed");
             assert_eq!(decrypted, input, "roundtrip mismatch for len={len}");
@@ -269,9 +264,7 @@ mod tests {
     #[test]
     fn roundtrip_preserves_lengths_that_are_multiples_of_seven() {
         for len in [7usize, 14, 497, 504, 4095, 4096, 4097] {
-            let input = (0..len)
-                .map(|index| ((index * 13 + 29) % 256) as u8)
-                .collect::<Vec<_>>();
+            let input = (0..len).map(|index| ((index * 13 + 29) % 256) as u8).collect::<Vec<_>>();
             let encrypted = encrypt(&input).expect("encrypt should succeed");
             let decrypted = decrypt(&encrypted).expect("decrypt should succeed");
             assert_eq!(decrypted, input, "roundtrip mismatch for len={len}");

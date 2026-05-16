@@ -3,7 +3,16 @@ export const proxyResources = {
     title: '代理中心',
     subtitle: '管理所有代理服务器配置',
     header: {
+      search: '搜索',
       searchPlaceholder: '按名称搜索...',
+      modeRemote: '代理',
+      modeLocal: '本地代理',
+      mihomoRunning: 'Mihomo 运行中',
+      mihomoConnected: 'Mihomo 已连接',
+      mihomoNotConnected: 'Mihomo 未连接',
+      mihomoChecking: '检测 Mihomo 中',
+      mihomoOffline: '未检测到 Mihomo 进程',
+      mihomoUnavailableHint: '当前未检测到可用的 Mihomo/Clash 核心，请先启动代理核心。',
       typeAll: '全部类型',
       create: '+ 添加代理',
       import: '导入',
@@ -101,6 +110,17 @@ export const proxyResources = {
       unreachable: '不可用',
       testing: '测试中',
       unknown: '未知',
+    },
+    localCoreAbnormal: {
+      title: '代理核心状态异常',
+      description: '未检测到可用的 Mihomo/Clash 核心，请确保核心正常运行。',
+    },
+    localNotConfigured: {
+      title: '尚未连接 Mihomo',
+      description: '请先完成 Mihomo 连接配置，然后再查看本地代理节点。',
+    },
+    localLoadFailed: {
+      title: '本地代理加载失败',
     },
     pagination: {
       pageInfo: '第 {{currentPage}} 页，共 {{totalPages}} 页',
@@ -214,7 +234,16 @@ export const proxyResources = {
     title: 'Proxy Center',
     subtitle: 'Manage all proxy configurations',
     header: {
+      search: 'Search',
       searchPlaceholder: 'Search by name...',
+      modeRemote: 'Proxies',
+      modeLocal: 'Local Proxies',
+      mihomoRunning: 'Mihomo Running',
+      mihomoConnected: 'Mihomo Connected',
+      mihomoNotConnected: 'Mihomo Not Connected',
+      mihomoChecking: 'Checking Mihomo',
+      mihomoOffline: 'Mihomo Not Running',
+      mihomoUnavailableHint: 'No available Mihomo/Clash core was detected. Start the proxy core first.',
       typeAll: 'All Types',
       create: '+ Add Proxy',
       import: 'Import',
@@ -317,6 +346,17 @@ export const proxyResources = {
       unreachable: 'Unreachable',
       testing: 'Testing',
       unknown: 'Unknown',
+    },
+    localCoreAbnormal: {
+      title: 'Proxy Core Unavailable',
+      description: 'No available Mihomo/Clash core was detected. Please make sure the core is running normally.',
+    },
+    localNotConfigured: {
+      title: 'Mihomo Not Connected',
+      description: 'Complete the Mihomo connection setup before viewing local proxy nodes.',
+    },
+    localLoadFailed: {
+      title: 'Failed to Load Local Proxies',
     },
     pagination: {
       pageInfo: 'Page {{currentPage}} of {{totalPages}}',

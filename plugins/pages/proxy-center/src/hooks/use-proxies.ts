@@ -7,6 +7,7 @@ interface UseProxiesParams {
   pageSize: number;
   searchQuery: string;
   proxyType: string;
+  enabled?: boolean;
 }
 
 interface UseProxiesReturn {
@@ -29,6 +30,14 @@ export function useProxies(params: UseProxiesParams): UseProxiesReturn {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProxies = useCallback(async () => {
+    if (params.enabled === false) {
+      setProxies([]);
+      setTotal(0);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -47,7 +56,7 @@ export function useProxies(params: UseProxiesParams): UseProxiesReturn {
     } finally {
       setLoading(false);
     }
-  }, [params.page, params.pageSize, params.proxyType, params.searchQuery]);
+  }, [params.enabled, params.page, params.pageSize, params.proxyType, params.searchQuery]);
 
   useEffect(() => {
     void fetchProxies();

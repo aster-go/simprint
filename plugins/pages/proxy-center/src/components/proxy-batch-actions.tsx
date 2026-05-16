@@ -38,15 +38,17 @@ export function ProxyBatchActions({
           <Activity className="h-3.5 w-3.5 mr-1.5" />
           {t('batchActions.testSelected', { defaultValue: '测试选中' })}
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDelete}
-          className="text-xs font-bold text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-3"
-        >
-          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-          {t('batchActions.delete')}
-        </Button>
+        {onDelete && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="text-xs font-bold text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-3"
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+            {t('batchActions.delete')}
+          </Button>
+        )}
       </div>
       <Button
         variant="ghost"

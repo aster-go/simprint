@@ -1,5 +1,20 @@
 use std::{collections::HashSet, path::PathBuf};
 
+use serde::Serialize;
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ProcessInfo {
+    pub process_name: String,
+    pub pid: u32,
+    pub executable_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct FindProcessResult {
+    pub running: bool,
+    pub process: Option<ProcessInfo>,
+}
+
 #[cfg(target_os = "windows")]
 pub mod finder {
     use super::*;
@@ -21,7 +36,7 @@ pub mod finder {
     }
 
     /// 查找指定进程的 PID 和路径
-    fn find_process_sysinfo(process_pattern: &Vec<&str>) -> HashSet<(u32, Option<PathBuf>)> {
+    fn find_process_sysinfo(process_pattern: &[String]) -> HashSet<(String, u32, Option<PathBuf>)> {
         use sysinfo::System;
 
         let mut sys = System::new();
@@ -31,17 +46,18 @@ pub mod finder {
             .iter()
             .filter(|(_, process)| {
                 let name = process.name().to_string_lossy().to_string().to_lowercase();
-                process_pattern.iter().any(|v| {
-                    let process_pattern_lower = v.to_ascii_lowercase();
-                    name.contains(&process_pattern_lower)
+                process_pattern.iter().any(|pattern| {
+                    let pattern_lower = pattern.trim().to_ascii_lowercase();
+                    !pattern_lower.is_empty() && name.contains(&pattern_lower)
                 })
             })
             .map(|(pid, process)| {
+                let process_name = process.name().to_string_lossy().to_string();
                 let process_path = process.exe().map(|v| v.to_path_buf());
 
-                (pid.as_u32(), process_path)
+                (process_name, pid.as_u32(), process_path)
             })
-            .collect::<HashSet<(u32, Option<PathBuf>)>>()
+            .collect::<HashSet<(String, u32, Option<PathBuf>)>>()
     }
 
     // 获取进程路径
@@ -95,16 +111,16 @@ pub mod finder {
     }
 
     /// 查找进程， 返回进程的 PID 和路径
-    pub fn find_process(process_pattern: &Vec<&str>) -> HashSet<(u32, Option<PathBuf>)> {
+    pub fn find_process(process_pattern: &[String]) -> HashSet<(String, u32, Option<PathBuf>)> {
         let processes = find_process_sysinfo(process_pattern);
         let processes = processes
             .iter()
-            .map(|(pid, process_path_buf)| {
+            .map(|(process_name, pid, process_path_buf)| {
                 let process_path_buf =
                     process_path_buf.clone().or_else(|| get_process_path_by_pid(*pid));
-                (*pid, process_path_buf)
+                (process_name.clone(), *pid, process_path_buf)
             })
-            .collect::<HashSet<(u32, Option<PathBuf>)>>();
+            .collect::<HashSet<(String, u32, Option<PathBuf>)>>();
 
         processes
     }
@@ -112,9 +128,9 @@ pub mod finder {
     /// 测试杀手指定名称的进程
     #[test]
     fn test_kill_process() {
-        let process_patterns = vec!["brave"];
+        let process_patterns = vec!["brave".to_string()];
         let processes = find_process(&process_patterns);
-        for (pid, _) in processes {
+        for (_, pid, _) in processes {
             let _ = kill_process(pid);
         }
     }
@@ -125,7 +141,7 @@ pub mod finder {
     use super::*;
     use sysinfo::{Pid, System};
 
-    pub fn find_process(process_pattern: &Vec<&str>) -> HashSet<(u32, Option<PathBuf>)> {
+    pub fn find_process(process_pattern: &[String]) -> HashSet<(String, u32, Option<PathBuf>)> {
         let mut sys = System::new();
         sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
 
@@ -133,17 +149,18 @@ pub mod finder {
             .iter()
             .filter(|(_, process)| {
                 let name = process.name().to_string_lossy().to_string().to_lowercase();
-                process_pattern.iter().any(|v| {
-                    let process_pattern_lower = v.to_ascii_lowercase();
-                    name.contains(&process_pattern_lower)
+                process_pattern.iter().any(|pattern| {
+                    let pattern_lower = pattern.trim().to_ascii_lowercase();
+                    !pattern_lower.is_empty() && name.contains(&pattern_lower)
                 })
             })
             .map(|(pid, process)| {
+                let process_name = process.name().to_string_lossy().to_string();
                 let process_path = process.exe().map(|v| v.to_path_buf());
 
-                (pid.as_u32(), process_path)
+                (process_name, pid.as_u32(), process_path)
             })
-            .collect::<HashSet<(u32, Option<PathBuf>)>>()
+            .collect::<HashSet<(String, u32, Option<PathBuf>)>>()
     }
 
     /// 杀死指定进程
@@ -165,4 +182,46 @@ pub fn kill_process(pid: u32) -> Result<(), String> {
     return finder::kill_process(pid);
     #[cfg(not(target_os = "windows"))]
     return finder::kill_process(pid);
+}
+
+#[tauri::command]
+pub fn find_process(names: Vec<String>) -> Result<FindProcessResult, String> {
+    let normalized_names = names
+        .into_iter()
+        .map(|name| name.trim().to_string())
+        .filter(|name| !name.is_empty())
+        .collect::<Vec<_>>();
+
+    if normalized_names.is_empty() {
+        return Ok(FindProcessResult {
+            running: false,
+            process: None,
+        });
+    }
+
+    let matches = finder::find_process(&normalized_names);
+
+    for candidate in &normalized_names {
+        let candidate_lower = candidate.to_ascii_lowercase();
+        if let Some((process_name, pid, executable_path)) = matches
+            .iter()
+            .find(|(name, _, _)| name.to_ascii_lowercase().contains(&candidate_lower))
+        {
+            return Ok(FindProcessResult {
+                running: true,
+                process: Some(ProcessInfo {
+                    process_name: process_name.clone(),
+                    pid: *pid,
+                    executable_path: executable_path
+                        .as_ref()
+                        .map(|path| path.to_string_lossy().to_string()),
+                }),
+            });
+        }
+    }
+
+    Ok(FindProcessResult {
+        running: false,
+        process: None,
+    })
 }

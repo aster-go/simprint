@@ -27,7 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTranslation } from 'react-i18next';
 import { FreeQuotaUsage } from './free-quota-usage';
-import { getGeneralSettings } from '../../../../services/store/src';
+import { getGeneralSettings, useMihomoRuntimeStore } from '../../../../services/store/src';
 import { ClashIcon } from '../../../../pages/proxy-center/src/mihomo/clash-icon';
 import { MihomoConnectDialog } from '../../../../pages/proxy-center/src/mihomo/mihomo-connect-dialog';
 import { getMihomoStatus } from '../../../../pages/proxy-center/src/mihomo/api';
@@ -99,6 +99,8 @@ interface NavItemProps {
   actionIcon?: LucideIcon | IconType;
   actionNode?: ReactNode;
   actionLabel?: string;
+  actionButtonClassName?: string;
+  actionButtonAnimated?: boolean;
   onActionClick?: () => void;
 }
 
@@ -120,6 +122,8 @@ const NavItem: React.FC<NavItemProps> = ({
   actionIcon: ActionIcon,
   actionNode,
   actionLabel,
+  actionButtonClassName,
+  actionButtonAnimated,
   onActionClick,
 }) => {
   const [collapsedActionVisible, setCollapsedActionVisible] = useState(false);
@@ -208,18 +212,20 @@ const NavItem: React.FC<NavItemProps> = ({
         {!collapsed && hasAction && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onActionClick();
-                }}
-                className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md border border-border/60 bg-background/60 text-sidebar-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-                aria-label={actionLabel || label}
-              >
-                {actionNode || (ActionIcon ? <ActionIcon className="h-3.5 w-3.5" /> : null)}
-              </button>
+              <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onActionClick();
+                  }}
+                  className={`flex h-8 w-8 items-center justify-center rounded-md border bg-background/60 transition-colors ${actionButtonAnimated ? 'animate-[sidebar-proxy-action-drift_10s_ease-in-out_infinite]' : ''} ${actionButtonClassName || 'border-border/60 text-sidebar-foreground/80 hover:bg-accent hover:text-foreground'}`}
+                  aria-label={actionLabel || label}
+                >
+                  {actionNode || (ActionIcon ? <ActionIcon className="h-3.5 w-3.5" /> : null)}
+                </button>
+              </div>
             </TooltipTrigger>
             <TooltipContent side="right">{actionLabel || label}</TooltipContent>
           </Tooltip>
@@ -238,9 +244,9 @@ const NavItem: React.FC<NavItemProps> = ({
                 className={`absolute inset-0 z-10 flex h-11 w-11 items-center justify-center rounded-lg border transform-gpu transition-all duration-200 ${collapsedActionVisible
                   ? 'pointer-events-auto translate-x-0 opacity-100'
                   : 'pointer-events-none translate-x-2 opacity-0'
-                  } ${isActive
+                  } ${actionButtonClassName || (isActive
                     ? 'border-primary/40 bg-primary/10 text-primary'
-                    : 'border-border/60 bg-background/90 text-sidebar-foreground/80 hover:bg-accent hover:text-foreground'
+                    : 'border-border/60 bg-background/90 text-sidebar-foreground/80 hover:bg-accent hover:text-foreground')
                   }`}
                 aria-label={actionLabel || label}
               >
@@ -262,6 +268,9 @@ interface NavGroupComponentProps {
   collapsed: boolean;
   currentPath: string;
   proxyActionLabel: string;
+  proxyActionNode: ReactNode;
+  proxyActionButtonClassName?: string;
+  proxyActionButtonAnimated?: boolean;
   onProxyActionClick: () => void;
 }
 
@@ -273,6 +282,9 @@ const NavGroupComponent: React.FC<NavGroupComponentProps> = ({
   collapsed,
   currentPath,
   proxyActionLabel,
+  proxyActionNode,
+  proxyActionButtonClassName,
+  proxyActionButtonAnimated,
   onProxyActionClick,
 }) => {
   return (
@@ -290,8 +302,10 @@ const NavGroupComponent: React.FC<NavGroupComponentProps> = ({
           icon={item.icon}
           isActive={isRouteActive(currentPath, item.href)}
           collapsed={collapsed}
-          actionNode={item.href === '/proxy' ? <ClashIcon className="h-4 w-4" /> : undefined}
+          actionNode={item.href === '/proxy' ? proxyActionNode : undefined}
           actionLabel={item.href === '/proxy' ? proxyActionLabel : undefined}
+          actionButtonClassName={item.href === '/proxy' ? proxyActionButtonClassName : undefined}
+          actionButtonAnimated={item.href === '/proxy' ? proxyActionButtonAnimated : undefined}
           onActionClick={item.href === '/proxy' ? onProxyActionClick : undefined}
         />
       ))}
@@ -304,6 +318,9 @@ interface NavListProps {
   collapsed: boolean;
   currentPath: string;
   proxyActionLabel: string;
+  proxyActionNode: ReactNode;
+  proxyActionButtonClassName?: string;
+  proxyActionButtonAnimated?: boolean;
   onProxyActionClick: () => void;
 }
 
@@ -315,6 +332,9 @@ const NavList: React.FC<NavListProps> = ({
   collapsed,
   currentPath,
   proxyActionLabel,
+  proxyActionNode,
+  proxyActionButtonClassName,
+  proxyActionButtonAnimated,
   onProxyActionClick,
 }) => {
   return (
@@ -329,6 +349,9 @@ const NavList: React.FC<NavListProps> = ({
                 collapsed={collapsed}
                 currentPath={currentPath}
                 proxyActionLabel={proxyActionLabel}
+                proxyActionNode={proxyActionNode}
+                proxyActionButtonClassName={proxyActionButtonClassName}
+                proxyActionButtonAnimated={proxyActionButtonAnimated}
                 onProxyActionClick={onProxyActionClick}
               />
             </div>
@@ -550,6 +573,21 @@ export const AppSidebar: React.FC = () => {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [mihomoDialogOpen, setMihomoDialogOpen] = useState(false);
   const [mihomoAttached, setMihomoAttached] = useState(false);
+  const mihomoRunning = useMihomoRuntimeStore((state) => state.running);
+  const mihomoCheckedAt = useMihomoRuntimeStore((state) => state.checkedAt);
+
+  const refreshMihomoAttached = useRef(async (cancelledRef?: { current: boolean }) => {
+    try {
+      const status = await getMihomoStatus();
+      if (!cancelledRef?.current) {
+        setMihomoAttached(status.attached);
+      }
+    } catch {
+      if (!cancelledRef?.current) {
+        setMihomoAttached(false);
+      }
+    }
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -573,26 +611,28 @@ export const AppSidebar: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    const cancelledRef = { current: false };
 
-    void getMihomoStatus()
-      .then((status) => {
-        if (!cancelled) {
-          setMihomoAttached(status.attached);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setMihomoAttached(false);
-        }
-      });
+    if (!mihomoRunning) {
+      setMihomoAttached(false);
+      return () => {
+        cancelledRef.current = true;
+      };
+    }
+
+    void refreshMihomoAttached.current(cancelledRef);
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
-  }, []);
+  }, [location.pathname, mihomoRunning]);
 
   const handleOpenMihomo = () => {
+    if (!mihomoRunning) {
+      navigate('/proxy?mode=local');
+      return;
+    }
+
     if (mihomoAttached) {
       navigate('/proxy/mihomo');
       return;
@@ -614,6 +654,33 @@ export const AppSidebar: React.FC = () => {
     return <SidebarPlaceholder collapsed={collapsed} />;
   }
 
+  const mihomoStatusTone = mihomoRunning
+    ? mihomoAttached
+      ? 'connected'
+      : 'warning'
+    : mihomoCheckedAt == null
+      ? 'unknown'
+      : 'offline';
+
+  const mihomoActionNode = (
+    <span className="relative flex items-center justify-center">
+      <ClashIcon className="h-4 w-4 text-current" />
+      {mihomoStatusTone === 'connected' ? (
+        <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-background bg-emerald-500" />
+      ) : mihomoStatusTone === 'warning' ? (
+        <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-amber-500 text-[9px] font-bold leading-none text-white">
+          !
+        </span>
+      ) : mihomoStatusTone === 'unknown' ? (
+        <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-background bg-muted-foreground/60" />
+      ) : (
+        <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-rose-500 text-[9px] font-bold leading-none text-white">
+          !
+        </span>
+      )}
+    </span>
+  );
+
   return (
     <aside
       className={`flex flex-col h-full shrink-0 transition-[width] duration-300 ease-out relative before:absolute before:inset-0 before:bg-background/10 before:backdrop-blur-2xl before:-z-10 px-1 ${collapsed ? 'w-16' : 'w-58'
@@ -628,13 +695,22 @@ export const AppSidebar: React.FC = () => {
         </div>
 
         {/* 导航列表区域 */}
-        <NavList
-          groups={localizeNavGroups(t)}
-          collapsed={collapsed}
-          currentPath={location.pathname}
-          proxyActionLabel={t('nav.item.mihomo', { defaultValue: 'Mihomo' })}
-          onProxyActionClick={handleOpenMihomo}
-        />
+      <NavList
+        groups={localizeNavGroups(t)}
+        collapsed={collapsed}
+        currentPath={location.pathname}
+        proxyActionLabel={t('nav.item.mihomo', { defaultValue: 'Mihomo' })}
+        proxyActionNode={mihomoActionNode}
+        proxyActionButtonClassName={
+          mihomoStatusTone === 'connected'
+            ? 'border-emerald-500/30 bg-background/90 text-emerald-600 hover:bg-muted hover:text-foreground'
+            : mihomoStatusTone === 'warning'
+              ? 'border-amber-500/30 bg-background/90 text-amber-600 hover:bg-muted hover:text-foreground'
+              : 'border-rose-500/30 bg-background/90 text-rose-600 hover:bg-muted hover:text-rose-600'
+        }
+        proxyActionButtonAnimated={!collapsed}
+        onProxyActionClick={handleOpenMihomo}
+      />
 
         {/* 底部导航项（指纹审计、系统设置） */}
         <div className="shrink-0">

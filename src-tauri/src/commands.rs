@@ -91,6 +91,7 @@ pub fn register_handles() -> impl Fn(Invoke<tauri::Wry>) -> bool + Send + Sync +
         updater::get_prepared_update,
         // Core utilities
         crate::core::utils::process::kill_process,
+        crate::core::utils::process::find_process,
         // Logging commands
         logging::log_info,
         logging::log_error,
@@ -117,6 +118,10 @@ pub fn register_handles() -> impl Fn(Invoke<tauri::Wry>) -> bool + Send + Sync +
         mihomo::get_mihomo_overview,
         mihomo::test_mihomo_proxy_delay,
         mihomo::test_mihomo_group_delays,
+        mihomo::get_mihomo_node_selection,
+        mihomo::apply_mihomo_node_selection,
+        mihomo::get_local_mihomo_proxies,
+        mihomo::update_local_mihomo_proxy,
         // Store commands
         store::get_store_key,
         store::set_store_key,
