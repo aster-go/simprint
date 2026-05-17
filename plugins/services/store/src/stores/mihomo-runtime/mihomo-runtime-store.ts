@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { invoke } from '@/lib/tauri';
 
 const MIHOMO_PROCESS_GROUPS = [
-  ['clash-verge', 'clash-verge-service'],
-  ['clash-verge-rev', 'clash-verge-service'],
+  ['clash-verge'],
+  ['clash-verge-rev'],
   ['mihomo'],
 ];
 const MIHOMO_PROCESS_POLL_INTERVAL_MS = 30_000;
