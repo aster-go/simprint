@@ -121,6 +121,7 @@ pub fn register_handles() -> impl Fn(Invoke<tauri::Wry>) -> bool + Send + Sync +
         mihomo::get_mihomo_node_selection,
         mihomo::apply_mihomo_node_selection,
         mihomo::get_local_mihomo_proxies,
+        mihomo::ensure_mihomo_local_proxy_listeners,
         mihomo::update_local_mihomo_proxy,
         // Store commands
         store::get_store_key,

@@ -242,6 +242,25 @@ impl MihomoManager {
         persist_local_proxies(app, &proxies)?;
         Ok(updated_proxy)
     }
+
+    pub async fn ensure_local_proxy_listeners(
+        &self,
+        app: &tauri::AppHandle,
+    ) -> Result<bool, String> {
+        let config = require_connection_config(app)?;
+        let proxies = load_local_proxies(app)
+            .into_iter()
+            .filter(|proxy| proxy.controller == config.controller)
+            .collect::<Vec<_>>();
+
+        if proxies.is_empty() {
+            return Ok(false);
+        }
+
+        let client = MihomoClient::new(&config).map_err(|error| error.to_string())?;
+        sync_local_listeners(&client, &config.config_path, &proxies).await?;
+        Ok(true)
+    }
 }
 
 async fn build_overview(

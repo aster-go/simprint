@@ -101,6 +101,15 @@ export const useMihomoRuntimeStore = create<MihomoRuntimeState>((set, get) => ({
         status = null;
       }
 
+      if (status?.attached) {
+        try {
+          await invoke<boolean>('ensure_mihomo_local_proxy_listeners');
+        } catch {
+          // Keep the runtime status refresh lightweight; listener self-heal failure
+          // should not block the main Mihomo status update cycle.
+        }
+      }
+
       set({
         running: true,
         attached: status?.attached ?? false,

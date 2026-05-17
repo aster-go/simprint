@@ -71,6 +71,14 @@ pub async fn get_local_mihomo_proxies(
 }
 
 #[tauri::command]
+pub async fn ensure_mihomo_local_proxy_listeners(app: tauri::AppHandle) -> Result<bool, String> {
+    AppContext::get()
+        .mihomo_manager
+        .ensure_local_proxy_listeners(&app)
+        .await
+}
+
+#[tauri::command]
 pub async fn update_local_mihomo_proxy(
     app: tauri::AppHandle,
     request: UpdateMihomoLocalProxyRequest,

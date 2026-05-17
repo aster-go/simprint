@@ -109,6 +109,9 @@ export function ProxyHeader({
             {t('header.modeLocal', { defaultValue: '本地代理' })}
           </button>
         </div>
+        <div className="hidden items-center rounded-md border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-700 md:flex dark:text-amber-400">
+          {t('header.experimentalHint', { defaultValue: '实验性功能' })}
+        </div>
       </div>
       <div className="ml-auto flex items-center gap-2">
         <button
