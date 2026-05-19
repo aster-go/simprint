@@ -9,7 +9,7 @@ use crate::services::connectivity::ProxyExportService;
 use crate::services::environment::{
     AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse, CookieGroup,
     EnvironmentLaunchRuntimeService, EnvironmentService, KernelService, ProxyConfig,
-    RunningEnvironment, StartSyncParams,
+    RpaTabCloseResult, RpaTabSelection, RpaTabsSnapshot, RunningEnvironment, StartSyncParams,
 };
 use tauri::AppHandle;
 
@@ -73,6 +73,27 @@ pub async fn get_connected_environments() -> Result<Vec<String>> {
 #[tauri::command]
 pub async fn get_environment_cdp_endpoint(env_uuid: String) -> Result<Option<CdpEndpointResponse>> {
     KernelService::get_cdp_endpoint(env_uuid).await
+}
+
+#[tauri::command]
+pub async fn list_environment_rpa_tabs(env_uuid: String) -> Result<RpaTabsSnapshot> {
+    KernelService::list_rpa_tabs(env_uuid).await
+}
+
+#[tauri::command]
+pub async fn select_environment_rpa_tab(
+    env_uuid: String,
+    position: u32,
+) -> Result<RpaTabSelection> {
+    KernelService::select_rpa_tab(env_uuid, position).await
+}
+
+#[tauri::command]
+pub async fn close_environment_rpa_tab(
+    env_uuid: String,
+    position: u32,
+) -> Result<RpaTabCloseResult> {
+    KernelService::close_rpa_tab(env_uuid, position).await
 }
 
 #[tauri::command]

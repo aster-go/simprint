@@ -50,6 +50,9 @@ pub fn register_handles() -> impl Fn(Invoke<tauri::Wry>) -> bool + Send + Sync +
         environment::refresh_environment_proxy,
         environment::get_connected_environments,
         environment::get_environment_cdp_endpoint,
+        environment::list_environment_rpa_tabs,
+        environment::select_environment_rpa_tab,
+        environment::close_environment_rpa_tab,
         environment::get_environment_status,
         environment::get_all_environment_statuses,
         // File system commands

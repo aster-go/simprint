@@ -99,6 +99,27 @@ function normalizeExecutionError(error: unknown): string {
     return '浏览器连接已关闭，请重新执行。';
   }
 
+  if (message === 'TAB_INDEX_INVALID' || message.includes('TAB_INDEX_INVALID')) {
+    return '请选择有效的标签页位置。';
+  }
+
+  if (message.startsWith('TAB_INDEX_OUT_OF_RANGE:')) {
+    const [, rawIndex, rawTotal] = message.split(':');
+    return `标签页位置超出范围。当前共有 ${rawTotal || '?'} 个标签页，找不到第 ${rawIndex || '?'} 个标签页。`;
+  }
+
+  if (message === 'TAB_CLOSE_LAST_UNSUPPORTED' || message.includes('TAB_CLOSE_LAST_UNSUPPORTED')) {
+    return '至少需要保留一个标签页，无法关闭最后一个标签页。';
+  }
+
+  if (message === 'NO_ACTIVE_TAB_AFTER_CLOSE' || message.includes('NO_ACTIVE_TAB_AFTER_CLOSE')) {
+    return '关闭标签页后未找到可用的活动标签页，请重新执行。';
+  }
+
+  if (message === 'TAB_TARGET_UNAVAILABLE' || message === 'RPA_BROWSER_NOT_FOUND') {
+    return '当前标签页无法连接，请重新执行。';
+  }
+
   if (message === 'LOOP_BODY_CYCLE') {
     return '循环体内部存在无法结束的回路。';
   }

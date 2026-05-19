@@ -94,6 +94,36 @@ export class RpaRunner {
           nextStepId = step.next;
           break;
 
+        case 'select_tab': {
+          const tabIndex =
+            typeof step.config?.tabIndex === 'number' && Number.isFinite(step.config.tabIndex)
+              ? Math.trunc(step.config.tabIndex)
+              : NaN;
+
+          if (!Number.isInteger(tabIndex) || tabIndex < 1) {
+            throw new Error('TAB_INDEX_INVALID');
+          }
+
+          await this.adapter.selectTab(tabIndex);
+          nextStepId = step.next;
+          break;
+        }
+
+        case 'close_tab': {
+          const tabIndex =
+            typeof step.config?.tabIndex === 'number' && Number.isFinite(step.config.tabIndex)
+              ? Math.trunc(step.config.tabIndex)
+              : NaN;
+
+          if (!Number.isInteger(tabIndex) || tabIndex < 1) {
+            throw new Error('TAB_INDEX_INVALID');
+          }
+
+          await this.adapter.closeTab(tabIndex);
+          nextStepId = step.next;
+          break;
+        }
+
         case 'click': {
           const targetValue = step.target?.value?.trim();
           if (!targetValue) {

@@ -9,9 +9,10 @@ pub use api::{
     BatchLaunchResult, CdpEndpointResponse, CookieGroup, DestroyContextRequest, EmptyPayload,
     EnvConnectionPayload, EnvironmentCommandRequest, EnvironmentCommandResponse,
     EnvironmentResponse, EnvironmentStartRequest, ErrorResponse, FingerprintConfig,
-    HandshakeRequest, HandshakeResponse, InitializeContextRequest, RunningEnvironment,
-    RuntimeContextInput, RuntimeEventEnvelope, RuntimePhase, RuntimeStateSnapshot, StateResponse,
-    SyncCommandRequest, SyncCommandResponse, SyncResponse, UserInfo, WindowBoundsRequest,
+    HandshakeRequest, HandshakeResponse, InitializeContextRequest, RpaTabCloseResult,
+    RpaTabInfo, RpaTabSelection, RpaTabsSnapshot, RunningEnvironment, RuntimeContextInput,
+    RuntimeEventEnvelope, RuntimePhase, RuntimeStateSnapshot, StateResponse, SyncCommandRequest,
+    SyncCommandResponse, SyncResponse, UserInfo, WindowBoundsRequest,
 };
 pub use error::{ErrorCode, Result, RuntimeIpcError};
 pub use message::{Message, MessageType, PROTOCOL_VERSION, decode_payload, encode_payload};

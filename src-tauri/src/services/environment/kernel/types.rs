@@ -182,3 +182,32 @@ pub struct CdpEndpointResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub browser_ws_url: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpaTabInfo {
+    pub position: u32,
+    pub title: String,
+    pub url: String,
+    pub active: bool,
+    pub target_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpaTabsSnapshot {
+    pub tabs: Vec<RpaTabInfo>,
+    pub active_position: Option<u32>,
+    pub total: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpaTabSelection {
+    pub position: u32,
+    pub target_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpaTabCloseResult {
+    pub closed_position: u32,
+    pub active_position: u32,
+    pub target_id: String,
+}

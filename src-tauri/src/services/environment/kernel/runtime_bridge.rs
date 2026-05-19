@@ -17,7 +17,7 @@ use super::language;
 use super::timezone;
 use super::types::{
     AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse, KernelStatusEmitter,
-    ProxyConfig,
+    ProxyConfig, RpaTabCloseResult, RpaTabSelection, RpaTabsSnapshot,
 };
 use super::utils::emit_status;
 
@@ -175,6 +175,63 @@ pub async fn get_cdp_endpoint(env_uuid: String) -> Result<Option<CdpEndpointResp
                 browser_ws_url: endpoint.browser_ws_url,
             }))
         }
+        other => Err(format!("simprint-runtime 返回了非预期响应: {:?}", other).into()),
+    }
+}
+
+pub async fn list_rpa_tabs(env_uuid: String) -> Result<RpaTabsSnapshot> {
+    let response = AppContext::get()
+        .simprint_runtime_manager
+        .send_environment_command(EnvironmentCommandRequest::ListRpaTabs { env_uuid })
+        .await?;
+
+    match response {
+        EnvironmentCommandResponse::RpaTabsSnapshot { snapshot } => Ok(RpaTabsSnapshot {
+            tabs: snapshot
+                .tabs
+                .into_iter()
+                .map(|tab| super::types::RpaTabInfo {
+                    position: tab.position,
+                    title: tab.title,
+                    url: tab.url,
+                    active: tab.active,
+                    target_id: tab.target_id,
+                })
+                .collect(),
+            active_position: snapshot.active_position,
+            total: snapshot.total,
+        }),
+        other => Err(format!("simprint-runtime 返回了非预期响应: {:?}", other).into()),
+    }
+}
+
+pub async fn select_rpa_tab(env_uuid: String, position: u32) -> Result<RpaTabSelection> {
+    let response = AppContext::get()
+        .simprint_runtime_manager
+        .send_environment_command(EnvironmentCommandRequest::SelectRpaTab { env_uuid, position })
+        .await?;
+
+    match response {
+        EnvironmentCommandResponse::RpaTabSelected { selection } => Ok(RpaTabSelection {
+            position: selection.position,
+            target_id: selection.target_id,
+        }),
+        other => Err(format!("simprint-runtime 返回了非预期响应: {:?}", other).into()),
+    }
+}
+
+pub async fn close_rpa_tab(env_uuid: String, position: u32) -> Result<RpaTabCloseResult> {
+    let response = AppContext::get()
+        .simprint_runtime_manager
+        .send_environment_command(EnvironmentCommandRequest::CloseRpaTab { env_uuid, position })
+        .await?;
+
+    match response {
+        EnvironmentCommandResponse::RpaTabClosed { result } => Ok(RpaTabCloseResult {
+            closed_position: result.closed_position,
+            active_position: result.active_position,
+            target_id: result.target_id,
+        }),
         other => Err(format!("simprint-runtime 返回了非预期响应: {:?}", other).into()),
     }
 }

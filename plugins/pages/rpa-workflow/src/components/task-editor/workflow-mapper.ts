@@ -99,6 +99,15 @@ function buildWorkflowStep(step: FlowStep, nextStepId: string | null): RpaWorkfl
             : DEFAULT_NAVIGATE_URL,
         wait_until: step.config.waitForLoad === false ? 'commit' : 'load',
       };
+    case 'select_tab':
+    case 'close_tab':
+      return {
+        ...baseStep,
+        config: {
+          ...baseStep.config,
+          tabIndex: asNumber(step.config.tabIndex, 1),
+        },
+      };
     case 'click':
       return {
         ...baseStep,

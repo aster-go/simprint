@@ -19,7 +19,8 @@ pub mod verifier;
 // 重新导出常用类型
 pub use types::{
     AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse, CookieGroup,
-    ExtensionInfo, KernelPrepareStatusPayload, KernelStatusEmitter, ProxyConfig,
+    ExtensionInfo, KernelPrepareStatusPayload, KernelStatusEmitter, ProxyConfig, RpaTabInfo,
+    RpaTabCloseResult, RpaTabSelection, RpaTabsSnapshot,
 };
 
 /// 内核服务
@@ -188,6 +189,18 @@ impl KernelService {
 
     pub async fn get_cdp_endpoint(env_uuid: String) -> Result<Option<CdpEndpointResponse>> {
         runtime_bridge::get_cdp_endpoint(env_uuid).await
+    }
+
+    pub async fn list_rpa_tabs(env_uuid: String) -> Result<RpaTabsSnapshot> {
+        runtime_bridge::list_rpa_tabs(env_uuid).await
+    }
+
+    pub async fn select_rpa_tab(env_uuid: String, position: u32) -> Result<RpaTabSelection> {
+        runtime_bridge::select_rpa_tab(env_uuid, position).await
+    }
+
+    pub async fn close_rpa_tab(env_uuid: String, position: u32) -> Result<RpaTabCloseResult> {
+        runtime_bridge::close_rpa_tab(env_uuid, position).await
     }
 
     /// 停止环境

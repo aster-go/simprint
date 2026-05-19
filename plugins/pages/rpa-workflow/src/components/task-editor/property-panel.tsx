@@ -336,6 +336,42 @@ export function PropertyPanel({ step, onUpdateStep, onDeleteStep, embedded = fal
           </>
         );
 
+      case 'select_tab':
+        return (
+          <div className="space-y-2">
+            <Label className="text-xs">
+              {t('editor.config.tabIndex', { defaultValue: '标签页位置' })}
+            </Label>
+            <NumberStepInput
+              value={(step.config.tabIndex as number) || 1}
+              min={1}
+              onChange={(value) => handleConfigChange('tabIndex', Math.max(1, Math.trunc(value)))}
+              className="w-full"
+              inputClassName="w-full px-3 text-left text-xs"
+              decreaseLabel="减少标签页位置"
+              increaseLabel="增加标签页位置"
+            />
+          </div>
+        );
+
+      case 'close_tab':
+        return (
+          <div className="space-y-2">
+            <Label className="text-xs">
+              {t('editor.config.tabIndex', { defaultValue: '标签页位置' })}
+            </Label>
+            <NumberStepInput
+              value={(step.config.tabIndex as number) || 1}
+              min={1}
+              onChange={(value) => handleConfigChange('tabIndex', Math.max(1, Math.trunc(value)))}
+              className="w-full"
+              inputClassName="w-full px-3 text-left text-xs"
+              decreaseLabel="减少标签页位置"
+              increaseLabel="增加标签页位置"
+            />
+          </div>
+        );
+
       case 'wait':
         return (
           <>

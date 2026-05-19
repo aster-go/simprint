@@ -220,6 +220,35 @@ pub struct WindowBoundsRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpaTabInfo {
+    pub position: u32,
+    pub title: String,
+    pub url: String,
+    pub active: bool,
+    pub target_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpaTabsSnapshot {
+    pub tabs: Vec<RpaTabInfo>,
+    pub active_position: Option<u32>,
+    pub total: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpaTabSelection {
+    pub position: u32,
+    pub target_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpaTabCloseResult {
+    pub closed_position: u32,
+    pub active_position: u32,
+    pub target_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case")]
 pub enum EnvironmentCommandRequest {
     StartEnvironment {
@@ -245,6 +274,17 @@ pub enum EnvironmentCommandRequest {
     GetCdpEndpoint {
         env_uuid: String,
     },
+    ListRpaTabs {
+        env_uuid: String,
+    },
+    SelectRpaTab {
+        env_uuid: String,
+        position: u32,
+    },
+    CloseRpaTab {
+        env_uuid: String,
+        position: u32,
+    },
     GetEnvironmentStatus {
         env_uuid: String,
     },
@@ -263,6 +303,15 @@ pub enum EnvironmentCommandResponse {
     },
     CdpEndpoint {
         endpoint: Option<CdpEndpointResponse>,
+    },
+    RpaTabsSnapshot {
+        snapshot: RpaTabsSnapshot,
+    },
+    RpaTabSelected {
+        selection: RpaTabSelection,
+    },
+    RpaTabClosed {
+        result: RpaTabCloseResult,
     },
     BatchLaunchResults {
         results: Vec<BatchLaunchResult>,

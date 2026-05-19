@@ -1,6 +1,7 @@
 ﻿import type { BrowserAdapter, BrowserConditionCheck, BrowserExtractOptions, BrowserExtractResult, BrowserScriptResult, BrowserSession } from './browser-adapter';
 import { CdpClient } from './cdp-client';
 import type { RpaCapturedSelector, RpaWorkflowSelector } from '../types';
+import { closeEnvironmentRpaTab, selectEnvironmentRpaTab } from './tauri';
 
 interface CdpCreateTargetResult {
   targetId: string;
@@ -72,6 +73,50 @@ export class CdpBrowserAdapter implements BrowserAdapter {
         timeoutMs: 15000,
       }),
     ]);
+  }
+
+  async selectTab(index: number): Promise<void> {
+    this.assertConnected();
+
+    if (!Number.isInteger(index) || index < 1) {
+      throw new Error('TAB_INDEX_INVALID');
+    }
+
+    if (!this.session?.envUuid) {
+      throw new Error('Browser session has not been connected');
+    }
+
+    const selection = await selectEnvironmentRpaTab(this.session.envUuid, index);
+    const targetId = typeof selection.target_id === 'string' ? selection.target_id.trim() : '';
+    if (!targetId) {
+      throw new Error('TAB_TARGET_UNAVAILABLE');
+    }
+
+    const sessionId = await this.attachOrReuseTarget(targetId);
+    this.targetSessionId = sessionId;
+    await this.client.send('Page.bringToFront', undefined, sessionId).catch(() => undefined);
+  }
+
+  async closeTab(index: number): Promise<void> {
+    this.assertConnected();
+
+    if (!Number.isInteger(index) || index < 1) {
+      throw new Error('TAB_INDEX_INVALID');
+    }
+
+    if (!this.session?.envUuid) {
+      throw new Error('Browser session has not been connected');
+    }
+
+    const result = await closeEnvironmentRpaTab(this.session.envUuid, index);
+    const targetId = typeof result.target_id === 'string' ? result.target_id.trim() : '';
+    if (!targetId) {
+      throw new Error('TAB_TARGET_UNAVAILABLE');
+    }
+
+    const sessionId = await this.attachOrReuseTarget(targetId);
+    this.targetSessionId = sessionId;
+    await this.client.send('Page.bringToFront', undefined, sessionId).catch(() => undefined);
   }
 
   async screenshot(options?: { fullPage?: boolean; target?: RpaWorkflowSelector }): Promise<string> {
@@ -387,8 +432,19 @@ export class CdpBrowserAdapter implements BrowserAdapter {
       url: 'about:blank',
     });
 
+    const sessionId = await this.attachOrReuseTarget(target.targetId);
+    this.targetSessionId = sessionId;
+    return sessionId;
+  }
+
+  private async attachOrReuseTarget(targetId: string): Promise<string> {
+    const existing = this.targets.find((target) => target.targetId === targetId);
+    if (existing) {
+      return existing.sessionId;
+    }
+
     const attached = await this.client.send<CdpAttachToTargetResult>('Target.attachToTarget', {
-      targetId: target.targetId,
+      targetId,
       flatten: true,
     });
 
@@ -396,9 +452,8 @@ export class CdpBrowserAdapter implements BrowserAdapter {
     await this.client.send('DOM.enable', undefined, attached.sessionId);
     await this.client.send('Runtime.enable', undefined, attached.sessionId);
 
-    this.targetSessionId = attached.sessionId;
     this.targets.push({
-      targetId: target.targetId,
+      targetId,
       sessionId: attached.sessionId,
     });
 

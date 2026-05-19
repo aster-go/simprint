@@ -254,6 +254,37 @@ export function TaskEditor() {
         return t('editor.errors.browserConnectionClosed', { defaultValue: '浏览器连接已关闭，请重新运行。' });
       }
 
+      if (error === 'TAB_INDEX_INVALID') {
+        return t('editor.errors.tabIndexInvalid', { defaultValue: '请选择有效的标签页位置。' });
+      }
+
+      if (error.startsWith('TAB_INDEX_OUT_OF_RANGE:')) {
+        const [, rawIndex, rawTotal] = error.split(':');
+        const index = Number(rawIndex);
+        const total = Number(rawTotal);
+        return t('editor.errors.tabIndexOutOfRange', {
+          defaultValue: '标签页位置超出范围。当前共有 {{total}} 个标签页，找不到第 {{index}} 个标签页。',
+          index: Number.isFinite(index) ? index : rawIndex,
+          total: Number.isFinite(total) ? total : rawTotal,
+        });
+      }
+
+      if (error === 'TAB_CLOSE_LAST_UNSUPPORTED') {
+        return t('editor.errors.tabCloseLastUnsupported', {
+          defaultValue: '至少需要保留一个标签页，无法关闭最后一个标签页。',
+        });
+      }
+
+      if (error === 'NO_ACTIVE_TAB_AFTER_CLOSE') {
+        return t('editor.errors.noActiveTabAfterClose', {
+          defaultValue: '关闭标签页后未找到可用的活动标签页，请重新运行。',
+        });
+      }
+
+      if (error === 'TAB_TARGET_UNAVAILABLE' || error === 'RPA_BROWSER_NOT_FOUND') {
+        return t('editor.errors.browserConnectionClosed', { defaultValue: '浏览器连接已关闭，请重新运行。' });
+      }
+
       if (error === 'CONDITION_TEXT_REQUIRED') {
         return t('editor.condition.missingText', { defaultValue: '请先设置目标文本' });
       }
@@ -445,6 +476,8 @@ export function TaskEditor() {
         config:
           component.type === 'navigate'
             ? { url: DEFAULT_NAVIGATE_URL }
+            : component.type === 'select_tab' || component.type === 'close_tab'
+              ? { tabIndex: 1 }
             : component.type === 'input'
               ? { text: DEFAULT_INPUT_TEXT }
               : component.type === 'wait'

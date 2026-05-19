@@ -203,6 +203,26 @@ function summarizeStep(step: FlowStep, t: TFunction<'rpa'>): string {
       const url = readString(step.config.url);
       return url || t('editor.stepSubtitleDefaults.navigate');
     }
+    case 'select_tab': {
+      const tabIndex =
+        typeof step.config.tabIndex === 'number' && Number.isFinite(step.config.tabIndex)
+          ? Math.trunc(step.config.tabIndex)
+          : 1;
+      return t('editor.stepSubtitleDefaults.selectTab', {
+        defaultValue: '切换到第 {{index}} 个标签页',
+        index: Math.max(1, tabIndex),
+      });
+    }
+    case 'close_tab': {
+      const tabIndex =
+        typeof step.config.tabIndex === 'number' && Number.isFinite(step.config.tabIndex)
+          ? Math.trunc(step.config.tabIndex)
+          : 1;
+      return t('editor.stepSubtitleDefaults.closeTab', {
+        defaultValue: '关闭第 {{index}} 个标签页',
+        index: Math.max(1, tabIndex),
+      });
+    }
     case 'click': {
       const selector = readString(step.config.selector);
       return selector ? t('editor.stepSubtitleDefaults.clickReady') : t('editor.stepSubtitleDefaults.clickCapture');

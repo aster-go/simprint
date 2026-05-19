@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub use kernel::{
     AccountInfo, BatchLaunchRequest, BatchLaunchResult, CdpEndpointResponse, CookieGroup,
     ExtensionInfo, KernelPrepareStatusPayload, KernelService, KernelStatusEmitter, ProxyConfig,
+    RpaTabCloseResult, RpaTabInfo, RpaTabSelection, RpaTabsSnapshot,
 };
 pub use launch_runtime::EnvironmentLaunchRuntimeService;
 pub use position_manager::EnvironmentPositionManager;
