@@ -25,6 +25,20 @@ interface StoredWorkflowStep {
   enabled?: boolean;
   next?: string | null;
   branches?: Record<string, string>;
+  click_type?: string;
+  wait_for_element?: boolean;
+  clear_first?: boolean;
+  type_slowly?: boolean;
+  duration_ms?: number;
+  timeout_ms?: number;
+  output?: string;
+  script?: string;
+  url?: string;
+  value?: string;
+  target?: {
+    by?: string;
+    value?: string;
+  };
   config?: Record<string, unknown>;
   ui?: {
     source_type?: string;
@@ -338,6 +352,57 @@ function buildFlowStepFromStoredStep(step: StoredWorkflowStep): FlowStep {
     step.config && typeof step.config === 'object'
       ? { ...(step.config as Record<string, unknown>) }
       : {};
+  const selector = typeof step.target?.value === 'string' ? step.target.value : '';
+
+  if (!config.selector && selector) {
+    config.selector = selector;
+  }
+
+  if (!config.url && typeof step.url === 'string') {
+    config.url = step.url;
+  }
+
+  if (step.type === 'click') {
+    if (!config.clickType && typeof step.click_type === 'string') {
+      config.clickType = step.click_type;
+    }
+    if (!Object.prototype.hasOwnProperty.call(config, 'waitForElement')) {
+      config.waitForElement = step.wait_for_element !== false;
+    }
+  }
+
+  if (step.type === 'fill') {
+    if (!config.text && typeof step.value === 'string') {
+      config.text = step.value;
+    }
+    if (!Object.prototype.hasOwnProperty.call(config, 'clearFirst')) {
+      config.clearFirst = step.clear_first !== false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(config, 'typeSlowly')) {
+      config.typeSlowly = step.type_slowly === true;
+    }
+  }
+
+  if (step.type === 'delay') {
+    if (!config.duration && typeof step.duration_ms === 'number') {
+      config.duration = step.duration_ms;
+    }
+    if (!config.waitType) {
+      config.waitType = 'time';
+    }
+  }
+
+  if (step.type === 'wait_for' && !config.timeout && typeof step.timeout_ms === 'number') {
+    config.timeout = step.timeout_ms;
+  }
+
+  if (!config.outputKey && typeof step.output === 'string') {
+    config.outputKey = step.output;
+  }
+
+  if (!config.script && typeof step.script === 'string') {
+    config.script = step.script;
+  }
 
   if (step.branches && typeof step.branches === 'object') {
     config.branches = step.branches;
@@ -548,7 +613,13 @@ export function mapPortableTaskToEditorState(document: PortableRpaTaskDocument):
   })?.config?.workflow_meta as StoredWorkflowMeta | undefined;
   const importedIdMap = new Map<string, string>();
   sortedSteps.forEach((step) => {
-    importedIdMap.set(step.uuid, crypto.randomUUID());
+    const nextId = crypto.randomUUID();
+    importedIdMap.set(step.uuid, nextId);
+
+    const storedStep = step.config?.workflow_step;
+    if (storedStep && typeof storedStep === 'object' && typeof storedStep.id === 'string') {
+      importedIdMap.set(storedStep.id, nextId);
+    }
   });
   const storedStartStepId =
     typeof storedWorkflowMeta?.start_step_id === 'string'
@@ -556,23 +627,29 @@ export function mapPortableTaskToEditorState(document: PortableRpaTaskDocument):
       : null;
 
   const steps = sortedSteps.map((step, index) => {
-    const legacyStep = buildLegacyFlowStep(
-      {
-        uuid: step.uuid,
-        step_type: step.step_type,
-        name: step.name,
-        config: step.config,
-        enabled: step.enabled ?? true,
-        position_x: step.position_x,
-        position_y: step.position_y,
-        sort_order: step.sort_order,
-        next_step_uuid: step.next_step_uuid,
-        branch_config: step.branch_config,
-      },
-      step.next_step_uuid ?? sortedSteps[index + 1]?.uuid ?? null
-    );
-
-    const currentBranches = (legacyStep.config.branches as Record<string, unknown> | undefined) ?? {};
+    const storedStep =
+      step.config?.workflow_step && typeof step.config.workflow_step === 'object'
+        ? (step.config.workflow_step as StoredWorkflowStep)
+        : null;
+    const baseStep = storedStep
+      ? buildFlowStepFromStoredStep(storedStep)
+      : buildLegacyFlowStep(
+          {
+            uuid: step.uuid,
+            step_type: step.step_type,
+            name: step.name,
+            config: step.config,
+            enabled: step.enabled ?? true,
+            position_x: step.position_x,
+            position_y: step.position_y,
+            sort_order: step.sort_order,
+            next_step_uuid: step.next_step_uuid,
+            branch_config: step.branch_config,
+          },
+          step.next_step_uuid ?? sortedSteps[index + 1]?.uuid ?? null
+        );
+    const sourceId = storedStep?.id ?? step.uuid;
+    const currentBranches = (baseStep.config.branches as Record<string, unknown> | undefined) ?? {};
     const mappedBranches = Object.fromEntries(
       Object.entries(currentBranches).map(([key, value]) => [
         key,
@@ -581,17 +658,18 @@ export function mapPortableTaskToEditorState(document: PortableRpaTaskDocument):
     );
 
     return {
-      ...legacyStep,
-      id: importedIdMap.get(step.uuid) ?? legacyStep.id,
-      nextStepId: step.next_step_uuid ? importedIdMap.get(step.next_step_uuid) ?? null : null,
-      isStart: storedStartStepId ? importedIdMap.get(step.uuid) === storedStartStepId : index === 0,
+      ...baseStep,
+      id: importedIdMap.get(sourceId) ?? baseStep.id,
+      nextStepId: baseStep.nextStepId ? importedIdMap.get(baseStep.nextStepId) ?? null : null,
+      parentLoopId: baseStep.parentLoopId ? importedIdMap.get(baseStep.parentLoopId) ?? null : null,
+      isStart: storedStartStepId ? importedIdMap.get(sourceId) === storedStartStepId : index === 0,
       config:
         Object.keys(mappedBranches).length > 0
           ? {
-              ...legacyStep.config,
+              ...baseStep.config,
               branches: mappedBranches,
             }
-          : legacyStep.config,
+          : baseStep.config,
     };
   });
 

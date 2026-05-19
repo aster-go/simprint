@@ -34,11 +34,11 @@ pub async fn execute_local_rpa_script(
         .await
         .map_err(|_| "LOCAL_SCRIPT_PREPARE_FAILED".to_string())?;
 
-    let execution = timeout(
-        Duration::from_secs(60),
-        Command::new("node").arg(&script_path).output(),
-    )
-    .await;
+    let mut command = Command::new("node");
+    command.arg(&script_path);
+    apply_hidden_window_flags(&mut command);
+
+    let execution = timeout(Duration::from_secs(60), command.output()).await;
 
     let cleanup_result = fs::remove_file(&script_path).await;
     if cleanup_result.is_err() {
@@ -90,7 +90,11 @@ pub async fn execute_local_rpa_script(
 }
 
 async fn ensure_node_runtime() -> std::result::Result<(), String> {
-    match Command::new("node").arg("--version").output().await {
+    let mut command = Command::new("node");
+    command.arg("--version");
+    apply_hidden_window_flags(&mut command);
+
+    match command.output().await {
         Ok(output) if output.status.success() => Ok(()),
         Ok(_) => Err("NODE_RUNTIME_NOT_FOUND".to_string()),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
@@ -102,6 +106,16 @@ async fn ensure_node_runtime() -> std::result::Result<(), String> {
 
 fn build_temp_script_path() -> PathBuf {
     env::temp_dir().join(format!("simprint-rpa-script-{}.cjs", Uuid::new_v4()))
+}
+
+fn apply_hidden_window_flags(command: &mut Command) {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
 }
 
 fn build_runner_script(script: &str, variables: &Value) -> std::result::Result<String, String> {
