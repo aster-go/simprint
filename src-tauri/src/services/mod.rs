@@ -7,11 +7,9 @@
 //! - 权限检查和验证
 
 pub mod app;
-pub mod auth;
 pub mod connectivity;
 pub mod environment;
 pub mod file_system;
 pub mod local_extensions;
 pub mod mihomo;
-pub mod updater;
 pub mod window;

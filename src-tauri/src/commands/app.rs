@@ -24,10 +24,10 @@ pub async fn get_app_state() -> Result<crate::app::init_state::AppInitState> {
 }
 
 #[tauri::command]
-pub async fn complete_and_show_main(app: AppHandle) -> Result<()> {
-    crate::app::startup::StartupService::complete_and_show_main(app)
+pub async fn main_window_ready(app: AppHandle) -> Result<()> {
+    crate::app::startup::StartupService::main_window_ready(app)
         .await
-        .map_err(|_| "显示主窗口失败".into())
+        .map_err(|_| "记录主窗口就绪状态失败".into())
 }
 
 #[tauri::command]
@@ -45,13 +45,6 @@ pub fn get_auto_start_state(app: AppHandle) -> Result<AutoStartState> {
 #[tauri::command]
 pub fn set_auto_start_enabled(app: AppHandle, enabled: bool) -> Result<AutoStartState> {
     AppService::set_auto_start_enabled(&app, enabled)
-}
-
-#[tauri::command]
-pub async fn splashscreen_ready() -> Result<()> {
-    crate::app::startup::StartupService::splashscreen_ready()
-        .await
-        .map_err(|_| "设置 splashscreen 就绪失败".into())
 }
 
 // ============================================================================

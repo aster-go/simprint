@@ -9,7 +9,7 @@ use axum::http::StatusCode;
 use serde_json::Value;
 
 use crate::local_api::{
-    client::main_server::proxy_request, context::LocalApiRequestContext, types::LocalApiRoute,
+    client::business::dispatch_request, context::LocalApiRequestContext, types::LocalApiRoute,
 };
 
 pub async fn forward_service(
@@ -17,11 +17,19 @@ pub async fn forward_service(
     payload: Value,
     route: LocalApiRoute,
 ) -> Result<Value, (StatusCode, String)> {
-    proxy_request(
+    let response = dispatch_request(
         route.server_path,
         route.permission_code,
         &ctx.api_key,
         payload,
     )
-    .await
+    .await?;
+    let response: crate::infrastructure::http::client::JsonRespnse =
+        serde_json::from_value(response).map_err(|error| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("failed to parse business response: {error}"),
+            )
+        })?;
+    Ok(response.data.unwrap_or(Value::Null))
 }
