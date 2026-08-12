@@ -2,6 +2,8 @@ import { Fragment, useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { FaApple, FaFirefoxBrowser, FaLinux, FaWindows } from 'react-icons/fa';
+import { SiGooglechrome } from 'react-icons/si';
 import {
   MoreVertical,
   Edit,
@@ -81,21 +83,21 @@ function FingerprintIcons({ environment }: { environment: Environment }) {
     osItems.push({
       key: 'os-windows',
       label: 'Windows',
-      node: <i className="fa-brands fa-windows text-sm text-blue-500" />,
+      node: <FaWindows className="h-4 w-4 text-blue-500" />,
     });
   }
   if (os === 'macOS') {
     osItems.push({
       key: 'os-macos',
       label: 'macOS',
-      node: <i className="fa-brands fa-apple text-sm text-foreground" />,
+      node: <FaApple className="h-4 w-4 text-foreground" />,
     });
   }
   if (os === 'Linux') {
     osItems.push({
       key: 'os-linux',
       label: 'Linux',
-      node: <i className="fa-brands fa-linux text-sm text-orange-500" />,
+      node: <FaLinux className="h-4 w-4 text-orange-500" />,
     });
   }
 
@@ -103,14 +105,14 @@ function FingerprintIcons({ environment }: { environment: Environment }) {
     browserItems.push({
       key: 'browser-chrome',
       label: 'Chrome',
-      node: <i className="fa-brands fa-chrome text-sm text-blue-500" />,
+      node: <SiGooglechrome className="h-4 w-4 text-blue-500" />,
     });
   }
   if (browser === 'Firefox') {
     browserItems.push({
       key: 'browser-firefox',
       label: 'Firefox',
-      node: <i className="fa-brands fa-firefox text-sm text-orange-500" />,
+      node: <FaFirefoxBrowser className="h-4 w-4 text-orange-500" />,
     });
   }
 

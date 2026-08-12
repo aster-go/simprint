@@ -594,7 +594,7 @@ mod tests {
         assert_eq!(kernels[0].compatible_signatures.len(), 1);
         assert_eq!(
             kernels[0].compatible_signatures[0],
-            "26afa023c6637f045b6825a8e14b720a2305504b313f063bc8410bb0aef19bbf"
+            "a864f950c2e77d18ef932f2ad3dbde63039c3b467994daab83081ce6b28c4f82"
         );
         assert!(kernels[0].url.as_deref().unwrap().starts_with("https://"));
     }
