@@ -90,7 +90,7 @@ jobs:
           uploadUpdaterJson: true
           uploadUpdaterSignatures: true
           updaterJsonPreferNsis: true
-          releaseAssetNamePattern: Simprint_[version]_[arch]_fixed-runtime[setup].[ext]
+          releaseAssetNamePattern: Simprint_[version]_[arch]-full[setup].[ext]
           args: --features production --target x86_64-pc-windows-msvc
 
       - name: Prepare ARM64 fixed-runtime config
@@ -115,7 +115,7 @@ jobs:
           uploadUpdaterJson: true
           uploadUpdaterSignatures: true
           updaterJsonPreferNsis: true
-          releaseAssetNamePattern: Simprint_[version]_[arch]_fixed-runtime[setup].[ext]
+          releaseAssetNamePattern: Simprint_[version]_[arch]-full[setup].[ext]
           args: --features production --target aarch64-pc-windows-msvc
 
       - name: Prepare x86 fixed-runtime config
@@ -140,7 +140,7 @@ jobs:
           uploadUpdaterJson: true
           uploadUpdaterSignatures: true
           updaterJsonPreferNsis: true
-          releaseAssetNamePattern: Simprint_[version]_[arch]_fixed-runtime[setup].[ext]
+          releaseAssetNamePattern: Simprint_[version]_[arch]-full[setup].[ext]
           args: --features production --target i686-pc-windows-msvc
 
       - name: Preserve fixed-runtime updater manifest
@@ -154,10 +154,10 @@ jobs:
 
           $latestPath = Join-Path $manifestDir "latest.json"
           $fixedPath = Join-Path $manifestDir "latest-fixed.json"
-          $releaseMetadataPath = Join-Path $manifestDir "release.json"
-          gh api "repos/${{ github.repository }}/releases/${{ steps.release.outputs.releaseId }}" |
-            Out-File -FilePath $releaseMetadataPath -Encoding utf8
-          node deploy/verify-updater-manifest.mjs $latestPath fixed-runtime $releaseMetadataPath
+          $releaseNotesPath = Join-Path $manifestDir "release-notes.md"
+          gh api "repos/${{ github.repository }}/releases/${{ steps.release.outputs.releaseId }}" --jq .body |
+            Out-File -FilePath $releaseNotesPath -Encoding utf8
+          node deploy/finalize-updater-manifest.mjs $latestPath fixed-runtime "${{ github.repository }}" "${{ github.ref_name }}" $releaseNotesPath
           Copy-Item $latestPath $fixedPath
           gh release upload "${{ github.ref_name }}" $fixedPath --clobber
 
@@ -183,7 +183,7 @@ jobs:
           uploadUpdaterJson: true
           uploadUpdaterSignatures: true
           updaterJsonPreferNsis: true
-          releaseAssetNamePattern: Simprint_[version]_[arch]_embedBootstrapper[setup].[ext]
+          releaseAssetNamePattern: Simprint_[version]_[arch][setup].[ext]
           args: --features production --target x86_64-pc-windows-msvc
 
       - name: Prepare ARM64 embedBootstrapper config
@@ -208,7 +208,7 @@ jobs:
           uploadUpdaterJson: true
           uploadUpdaterSignatures: true
           updaterJsonPreferNsis: true
-          releaseAssetNamePattern: Simprint_[version]_[arch]_embedBootstrapper[setup].[ext]
+          releaseAssetNamePattern: Simprint_[version]_[arch][setup].[ext]
           args: --features production --target aarch64-pc-windows-msvc
 
       - name: Prepare x86 embedBootstrapper config
@@ -233,10 +233,10 @@ jobs:
           uploadUpdaterJson: true
           uploadUpdaterSignatures: true
           updaterJsonPreferNsis: true
-          releaseAssetNamePattern: Simprint_[version]_[arch]_embedBootstrapper[setup].[ext]
+          releaseAssetNamePattern: Simprint_[version]_[arch][setup].[ext]
           args: --features production --target i686-pc-windows-msvc
 
-      - name: Verify both updater manifests
+      - name: Finalize both updater manifests
         shell: powershell
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -246,11 +246,14 @@ jobs:
           gh release download "${{ github.ref_name }}" --pattern "latest.json" --dir $manifestDir
           gh release download "${{ github.ref_name }}" --pattern "latest-fixed.json" --dir $manifestDir
 
-          $releaseMetadataPath = Join-Path $manifestDir "release.json"
-          gh api "repos/${{ github.repository }}/releases/${{ steps.release.outputs.releaseId }}" |
-            Out-File -FilePath $releaseMetadataPath -Encoding utf8
-          node deploy/verify-updater-manifest.mjs (Join-Path $manifestDir "latest.json") embedBootstrapper $releaseMetadataPath
-          node deploy/verify-updater-manifest.mjs (Join-Path $manifestDir "latest-fixed.json") fixed-runtime $releaseMetadataPath
+          $latestPath = Join-Path $manifestDir "latest.json"
+          $fixedPath = Join-Path $manifestDir "latest-fixed.json"
+          $releaseNotesPath = Join-Path $manifestDir "release-notes.md"
+          gh api "repos/${{ github.repository }}/releases/${{ steps.release.outputs.releaseId }}" --jq .body |
+            Out-File -FilePath $releaseNotesPath -Encoding utf8
+          node deploy/finalize-updater-manifest.mjs $latestPath embedBootstrapper "${{ github.repository }}" "${{ github.ref_name }}" $releaseNotesPath
+          node deploy/finalize-updater-manifest.mjs $fixedPath fixed-runtime "${{ github.repository }}" "${{ github.ref_name }}" $releaseNotesPath
+          gh release upload "${{ github.ref_name }}" $latestPath $fixedPath --clobber
 
       - name: Publish completed GitHub release
         shell: powershell

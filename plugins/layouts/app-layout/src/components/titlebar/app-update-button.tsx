@@ -22,6 +22,7 @@ import {
   getAvailableAppUpdate,
   installAvailableAppUpdate,
 } from '@/lib/app-updater';
+import { ReleaseNotesMarkdown } from './release-notes-markdown';
 
 export function AppUpdateButton() {
   const { t } = useTranslation('appLayout');
@@ -129,8 +130,10 @@ export function AppUpdateButton() {
 
           <div className="min-h-0 overflow-y-auto px-6 py-5">
             <p className="mb-2 text-sm font-medium text-foreground">{t('update.releaseNotes')}</p>
-            <div className="max-h-[42vh] overflow-y-auto rounded-lg border bg-muted/30 p-4 text-sm leading-6 whitespace-pre-wrap break-words text-muted-foreground">
-              {update.body?.trim() || t('update.noReleaseNotes')}
+            <div className="max-h-[42vh] min-w-0 overflow-auto rounded-lg border bg-muted/30 p-4 text-sm break-words [&>:first-child]:mt-0 [&>:last-child]:mb-0">
+              <ReleaseNotesMarkdown>
+                {update.body?.trim() || t('update.noReleaseNotes')}
+              </ReleaseNotesMarkdown>
             </div>
 
             {installing ? (
