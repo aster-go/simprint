@@ -113,9 +113,6 @@ Current high-value contribution areas include:
 
 Issues and pull requests are welcome. If you are interested in contributing on a longer horizon, please open an issue or discussion to introduce yourself and mention the areas you want to help maintain.
 
-## Friend Links
-
-- [LINUX DO - 新的理想型社区](https://linux.do/)
 
 ## License
 
